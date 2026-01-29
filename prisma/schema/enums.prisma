@@ -13,3 +13,9 @@ enum DayOfWeek {
     SATURDAY
     SUNDAY
 }
+
+enum Roles {
+    ADMIN
+    TUTOR
+    STUDENT
+}

@@ -7,7 +7,7 @@ model User {
     createdAt     DateTime @map("created_at")
     updatedAt     DateTime @map("updated_at")
 
-    role          String  @default("STUDENT")
+    role          Roles   @default(STUDENT)
     first_name    String?
     last_name     String?
     phone         String?
@@ -29,27 +29,37 @@ model User {
 
 model Session {
     id        String   @id
-    expiresAt DateTime @map("expires_at")
-    ipAddress String?  @map("ip_address")
-    userAgent String?  @map("user_agent")
-    userId    String   @map("user_id")
+    expiresAt DateTime
+    token     String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    ipAddress String?
+    userAgent String?
+    userId    String
     user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+    @@unique([token])
+    @@index([userId])
     @@map("session")
 }
 
 model Account {
-    id           String    @id
-    accountId    String    @map("account_id")
-    providerId   String    @map("provider_id")
-    userId       String    @map("user_id")
-    accessToken  String?   @map("access_token")
-    refreshToken String?   @map("refresh_token")
-    idToken      String?   @map("id_token")
-    expiresAt    DateTime? @map("expires_at")
-    password     String?
-    user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    id                    String    @id
+    accountId             String
+    providerId            String
+    userId                String
+    user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    accessToken           String?
+    refreshToken          String?
+    idToken               String?
+    accessTokenExpiresAt  DateTime?
+    refreshTokenExpiresAt DateTime?
+    scope                 String?
+    password              String?
+    createdAt             DateTime  @default(now())
+    updatedAt             DateTime  @updatedAt
 
+    @@index([userId])
     @@map("account")
 }
 
@@ -57,7 +67,10 @@ model Verification {
     id         String   @id
     identifier String
     value      String
-    expiresAt  DateTime @map("expires_at")
+    expiresAt  DateTime
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
 
+    @@index([identifier])
     @@map("verification")
 }

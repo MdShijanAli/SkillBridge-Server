@@ -1,6 +1,5 @@
 import express, { type Application } from "express";
 import dotenv from "dotenv";
-// import { PostRouter } from "./modules/post/post.router";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth";
 import cors from "cors";
@@ -11,6 +10,7 @@ import {
   betterAuthMiddleware,
   betterAuthErrorHandler,
 } from "./middlewares/betterAuthErrorHandler";
+import { UserRouter } from "./modules/users/user.route";
 
 dotenv.config();
 
@@ -35,7 +35,7 @@ app.use("/api/auth", betterAuthMiddleware, async (req, res, next) => {
   }
 });
 
-// app.use("/posts", PostRouter);
+app.use("/api/users", UserRouter);
 // app.use("/comments", CommentRouter);
 
 app.get("/", (req, res) => {

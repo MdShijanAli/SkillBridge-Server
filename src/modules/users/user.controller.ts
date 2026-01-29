@@ -31,6 +31,32 @@ const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
+const getUserDetails = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  try {
+    const user = await UserService.getUserDetails(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+        data: null,
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "User details fetched successfully",
+      data: user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch user details",
+      data: null,
+    });
+  }
+};
+
 export const UserController = {
   getAllUsers,
+  getUserDetails,
 };

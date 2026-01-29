@@ -7,6 +7,10 @@ import cors from "cors";
 // import { CommentRouter } from "./modules/comment/comment.route";
 import errorHandler from "./middlewares/globalErrorHandler";
 import { notFoundHandler } from "./middlewares/notFound";
+import {
+  betterAuthMiddleware,
+  betterAuthErrorHandler,
+} from "./middlewares/betterAuthErrorHandler";
 
 dotenv.config();
 
@@ -23,7 +27,13 @@ app.use(
 
 app.use(express.json());
 
-app.use("/api/auth", toNodeHandler(auth));
+app.use("/api/auth", betterAuthMiddleware, async (req, res, next) => {
+  try {
+    await toNodeHandler(auth)(req, res);
+  } catch (error: any) {
+    betterAuthErrorHandler(error, req, res, next);
+  }
+});
 
 // app.use("/posts", PostRouter);
 // app.use("/comments", CommentRouter);

@@ -1,0 +1,27 @@
+model Booking {
+    id                 Int           @id @default(autoincrement())
+    studentId          Int           @map("student_id")
+    tutorId            Int           @map("tutor_id")
+    categoryId         Int           @map("category_id")
+    scheduledAt        DateTime      @map("scheduled_at")
+    duration           Int
+    status             BookingStatus @default(CONFIRMED)
+    price              Decimal       @db.Decimal(10, 2)
+    sessionNotes       String?       @map("session_notes") @db.Text
+    cancellationReason String?       @map("cancellation_reason") @db.Text
+    cancelledBy        Int?          @map("cancelled_by")
+    completedAt        DateTime?     @map("completed_at")
+    createdAt          DateTime      @default(now()) @map("created_at")
+    updatedAt          DateTime      @updatedAt @map("updated_at")
+
+    student  User     @relation("StudentBookings", fields: [studentId], references: [id], onDelete: Cascade)
+    tutor    User     @relation("TutorBookings", fields: [tutorId], references: [id], onDelete: Cascade)
+    category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+    review   Review?
+
+    @@index([studentId])
+    @@index([tutorId])
+    @@index([scheduledAt])
+    @@index([status])
+    @@map("bookings")
+}

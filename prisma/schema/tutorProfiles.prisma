@@ -1,0 +1,37 @@
+model TutorProfile {
+    id              Int      @id @default(autoincrement())
+    userId          Int      @unique @map("user_id")
+    bio             String?  @db.Text
+    hourlyRate      Decimal  @map("hourly_rate") @db.Decimal(10, 2)
+    yearsExperience Int      @default(0) @map("years_experience")
+    education       String?  @db.Text
+    specialization  String?  @db.VarChar(255)
+    languages       String[] @default([])
+    videoIntroUrl   String?  @map("video_intro_url") @db.VarChar(500)
+    averageRating   Decimal  @default(0) @map("average_rating") @db.Decimal(3, 2)
+    totalReviews    Int      @default(0) @map("total_reviews")
+    totalSessions   Int      @default(0) @map("total_sessions")
+    isVerified      Boolean  @default(false) @map("is_verified")
+    isFeatured      Boolean  @default(false) @map("is_featured")
+    createdAt       DateTime @default(now()) @map("created_at")
+    updatedAt       DateTime @updatedAt @map("updated_at")
+
+    user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+    categories   TutorCategory[]
+    availability Availability[]
+
+    @@map("tutor_profiles")
+}
+
+model TutorCategory {
+    id             Int      @id @default(autoincrement())
+    tutorProfileId Int      @map("tutor_profile_id")
+    categoryId     Int      @map("category_id")
+    createdAt      DateTime @default(now()) @map("created_at")
+
+    tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+    category     Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+    @@unique([tutorProfileId, categoryId])
+    @@map("tutor_categories")
+}

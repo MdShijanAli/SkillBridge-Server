@@ -1,0 +1,52 @@
+{
+  "name": "skillbridge-server",
+  "version": "1.0.0",
+  "description": "SkillBridge is a full-stack web application that connects learners with expert tutors. Students can browse tutor profiles, view availability, and book sessions instantly. Tutors can manage their profiles, set availability, and track their teaching sessions. Admins oversee the platform and manage users.",
+  "keywords": [
+    "skill",
+    "bridge",
+    "skillbridge",
+    "education",
+    "learing-management-system",
+    "educational",
+    "website",
+    "educational",
+    "system",
+    "educational",
+    "application"
+  ],
+  "license": "ISC",
+  "author": "Md Shijan Ali",
+  "type": "module",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "migrate": "npx prisma migrate dev",
+    "generate": "npx prisma generate",
+    "show:db": "npx prisma studio",
+    "generate:auth": "npx @better-auth/cli generate",
+    "seed:admin": "tsx src/script/seedAdmin.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
+    "better-auth": "^1.4.18",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "nodemailer": "^7.0.13",
+    "pg": "^8.17.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.1.0",
+    "@types/nodemailer": "^7.0.9",
+    "@types/pg": "^8.16.0",
+    "prisma": "^7.3.0"
+  }
+}

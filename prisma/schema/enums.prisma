@@ -1,0 +1,21 @@
+enum UserRole {
+    STUDENT
+    TUTOR
+    ADMIN
+}
+
+enum BookingStatus {
+    CONFIRMED
+    COMPLETED
+    CANCELLED
+}
+
+enum DayOfWeek {
+    MONDAY
+    TUESDAY
+    WEDNESDAY
+    THURSDAY
+    FRIDAY
+    SATURDAY
+    SUNDAY
+}

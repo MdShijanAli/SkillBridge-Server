@@ -1,9 +1,3 @@
-enum UserRole {
-    STUDENT
-    TUTOR
-    ADMIN
-}
-
 enum BookingStatus {
     CONFIRMED
     COMPLETED

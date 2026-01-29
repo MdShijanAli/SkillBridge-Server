@@ -23,16 +23,36 @@ export const auth = betterAuth({
     additionalFields: {
       role: {
         type: "string",
-        defaultValue: "user",
+        defaultValue: "STUDENT",
+      },
+      firstName: {
+        type: "string",
+        required: false,
+        fieldName: "first_name",
+      },
+      lastName: {
+        type: "string",
+        required: false,
+        fieldName: "last_name",
       },
       phone: {
         type: "string",
         required: false,
       },
-      status: {
+      profileImage: {
         type: "string",
-        defaultValue: "ACTIVE",
         required: false,
+        fieldName: "profile_image",
+      },
+      isActive: {
+        type: "boolean",
+        defaultValue: true,
+        fieldName: "is_active",
+      },
+      isBanned: {
+        type: "boolean",
+        defaultValue: false,
+        fieldName: "is_banned",
       },
     },
   },

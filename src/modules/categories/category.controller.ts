@@ -49,7 +49,90 @@ const getAllCategories = async (req: Request, res: Response) => {
   }
 };
 
+const getCategoryById = async (req: Request, res: Response) => {
+  const { categoryId } = req.params;
+  try {
+    const category = await CategoryService.getCategoryById(Number(categoryId));
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+        data: null,
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Category details fetched successfully",
+      data: category,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch category details",
+      data: null,
+    });
+  }
+};
+
+const updateCategory = async (req: Request, res: Response) => {
+  const { categoryId } = req.params;
+  try {
+    const category = await CategoryService.updateCategory(
+      Number(categoryId),
+      req.body,
+    );
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+        data: null,
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+      data: category,
+    });
+  } catch (error: any) {
+    console.error("Error updating category:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update category",
+      error: error.message?.split("\n").pop().trim() || error.message || error,
+    });
+  }
+};
+
+const deleteCategory = async (req: Request, res: Response) => {
+  const { categoryId } = req.params;
+  try {
+    const category = await CategoryService.deleteCategory(Number(categoryId));
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+        data: null,
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Category deleted successfully",
+      data: null,
+    });
+  } catch (error: any) {
+    console.error("Error deleting category:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete category",
+      error: error.message?.split("\n").pop().trim() || error.message || error,
+    });
+  }
+};
+
 export const CategoryController = {
   getAllCategories,
   createCategory,
+  getCategoryById,
+  updateCategory,
+  deleteCategory,
 };

@@ -55,9 +55,10 @@ const updateCategory = async (id: number, data: Partial<Category>) => {
 };
 
 const deleteCategory = async (id: number) => {
-  await prisma.category.delete({
+  const category = await prisma.category.delete({
     where: { id },
   });
+  return category;
 };
 
 export const CategoryService = {

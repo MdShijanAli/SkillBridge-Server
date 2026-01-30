@@ -34,7 +34,7 @@ const getAllUsers = async (req: Request, res: Response) => {
 const getUserDetails = async (req: Request, res: Response) => {
   const { userId } = req.params;
   try {
-    const user = await UserService.getUserDetails(userId);
+    const user = await UserService.getUserDetails(userId as string);
     if (!user) {
       return res.status(404).json({
         success: false,

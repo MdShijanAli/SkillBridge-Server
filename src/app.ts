@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth";
 import cors from "cors";
-// import { CommentRouter } from "./modules/comment/comment.route";
 import errorHandler from "./middlewares/globalErrorHandler";
 import { notFoundHandler } from "./middlewares/notFound";
 import {

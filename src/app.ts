@@ -11,6 +11,8 @@ import {
 } from "./middlewares/betterAuthErrorHandler";
 import { UserRoutes } from "./modules/users/user.route";
 import { CategoryRoutes } from "./modules/categories/category.route";
+import { AvailabilityRoutes } from "./modules/availability/availability.route";
+import { TutorProfileRoutes } from "./modules/tutor-profile/tutor-profile.route";
 
 dotenv.config();
 
@@ -37,6 +39,8 @@ app.use("/api/auth", betterAuthMiddleware, async (req, res, next) => {
 
 app.use("/api/users", UserRoutes);
 app.use("/api/categories", CategoryRoutes);
+app.use("/api/availabilities", AvailabilityRoutes);
+app.use("/api/tutor-profiles", TutorProfileRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the Blog Management API");

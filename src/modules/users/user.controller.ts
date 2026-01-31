@@ -56,7 +56,31 @@ const getUserDetails = async (req: Request, res: Response) => {
   }
 };
 
+const changeUserStatus = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const { is_active } = req.body;
+  console.log("Status:", is_active);
+  try {
+    const updatedUser = await UserService.changeUserStatus(
+      userId as string,
+      is_active,
+    );
+    res.status(200).json({
+      success: true,
+      message: "User status updated successfully",
+      data: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update user status",
+      data: null,
+    });
+  }
+};
+
 export const UserController = {
   getAllUsers,
   getUserDetails,
+  changeUserStatus,
 };

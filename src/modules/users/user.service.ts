@@ -46,7 +46,16 @@ const getUserDetails = async (userId: string) => {
   return user;
 };
 
+const changeUserStatus = async (userId: string, is_active: string) => {
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { is_active: is_active ? true : false },
+  });
+  return updatedUser;
+};
+
 export const UserService = {
   getAllUsers,
   getUserDetails,
+  changeUserStatus,
 };

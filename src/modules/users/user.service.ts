@@ -1,4 +1,13 @@
+import { User } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
+
+const updateUser = async (userId: string, userData: Partial<User>) => {
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: userData,
+  });
+  return updatedUser;
+};
 
 const getAllUsers = async ({
   page,
@@ -63,6 +72,7 @@ const bannedUser = async (userId: string, is_banned: string) => {
 };
 
 export const UserService = {
+  updateUser,
   getAllUsers,
   getUserDetails,
   changeUserStatus,

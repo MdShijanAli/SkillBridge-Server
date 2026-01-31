@@ -2,6 +2,28 @@ import { Request, Response } from "express";
 import { UserService } from "./user.service";
 import { formatResultWithPagination } from "../../utils/formatResult";
 
+const updateUser = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const userData = req.body;
+  try {
+    const updatedUser = await UserService.updateUser(
+      userId as string,
+      userData,
+    );
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update user",
+      data: null,
+    });
+  }
+};
+
 const getAllUsers = async (req: Request, res: Response) => {
   const { page = 1, limit = 10, search = "", filter = "" } = req.query;
   try {
@@ -103,6 +125,7 @@ const bannedUser = async (req: Request, res: Response) => {
 };
 
 export const UserController = {
+  updateUser,
   getAllUsers,
   getUserDetails,
   changeUserStatus,

@@ -1,7 +1,23 @@
 import { User } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
+import { UserRole } from "../../middlewares/auth";
 
-const updateUser = async (userId: string, userData: Partial<User>) => {
+const updateUser = async (
+  userId: string,
+  userData: Partial<User>,
+  requestedUser: Partial<User>,
+) => {
+  if (requestedUser.id !== userId && requestedUser.role !== "ADMIN") {
+    throw new Error(
+      "You are not authorized to update this user. You can only update your own profile.",
+    );
+  }
+  if (
+    requestedUser.role === UserRole.TUTOR ||
+    (requestedUser.role === UserRole.STUDENT && userData.role)
+  ) {
+    delete userData.role;
+  }
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: userData,

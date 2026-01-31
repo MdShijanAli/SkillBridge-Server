@@ -5,10 +5,12 @@ import { formatResultWithPagination } from "../../utils/formatResult";
 const updateUser = async (req: Request, res: Response) => {
   const { userId } = req.params;
   const userData = req.body;
+  const requestedUser = req.user;
   try {
     const updatedUser = await UserService.updateUser(
       userId as string,
       userData,
+      requestedUser,
     );
     res.status(200).json({
       success: true,
@@ -19,7 +21,7 @@ const updateUser = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Failed to update user",
-      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -48,7 +50,7 @@ const getAllUsers = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch users",
-      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -73,7 +75,7 @@ const getUserDetails = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch user details",
-      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -96,7 +98,7 @@ const changeUserStatus = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Failed to update user status",
-      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
@@ -119,7 +121,7 @@ const bannedUser = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Failed to update user banned status",
-      data: null,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };

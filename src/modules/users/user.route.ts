@@ -1,10 +1,24 @@
 import express from "express";
 import { UserController } from "./user.controller";
+import { authMiddleware, UserRole } from "../../middlewares/auth";
 
 const router = express.Router();
 
-router.get("/", UserController.getAllUsers);
-router.get("/:userId", UserController.getUserDetails);
-router.patch("/:userId/status", UserController.changeUserStatus);
+router.get("/", authMiddleware(UserRole.ADMIN), UserController.getAllUsers);
+router.get(
+  "/:userId",
+  authMiddleware(UserRole.ADMIN, UserRole.TUTOR, UserRole.STUDENT),
+  UserController.getUserDetails,
+);
+router.patch(
+  "/:userId/status",
+  authMiddleware(UserRole.ADMIN),
+  UserController.changeUserStatus,
+);
+router.patch(
+  "/:userId/ban",
+  authMiddleware(UserRole.ADMIN),
+  UserController.bannedUser,
+);
 
 export const UserRoutes = router;

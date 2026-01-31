@@ -79,8 +79,32 @@ const changeUserStatus = async (req: Request, res: Response) => {
   }
 };
 
+const bannedUser = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const { is_banned } = req.body;
+  console.log("Status:", is_banned);
+  try {
+    const updatedUser = await UserService.bannedUser(
+      userId as string,
+      is_banned,
+    );
+    res.status(200).json({
+      success: true,
+      message: "User banned status updated successfully",
+      data: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update user banned status",
+      data: null,
+    });
+  }
+};
+
 export const UserController = {
   getAllUsers,
   getUserDetails,
   changeUserStatus,
+  bannedUser,
 };

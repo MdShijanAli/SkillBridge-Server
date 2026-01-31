@@ -61,10 +61,26 @@ const deleteCategory = async (id: number) => {
   return category;
 };
 
+const changeCategoryStatus = async (
+  id: number,
+  isActive: boolean,
+  requestedUser: any,
+) => {
+  if (requestedUser.role !== "ADMIN" && requestedUser.role !== "TUTOR") {
+    throw new Error("Unauthorized to change category status");
+  }
+  const category = await prisma.category.update({
+    where: { id },
+    data: { isActive },
+  });
+  return category;
+};
+
 export const CategoryService = {
   getAllCategories,
   createCategory,
   getCategoryById,
   updateCategory,
   deleteCategory,
+  changeCategoryStatus,
 };

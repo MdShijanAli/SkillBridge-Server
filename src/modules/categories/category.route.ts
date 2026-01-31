@@ -21,5 +21,10 @@ router.delete(
   authMiddleware(UserRole.ADMIN, UserRole.TUTOR),
   CategoryController.deleteCategory,
 );
+router.patch(
+  "/:categoryId/status",
+  authMiddleware(UserRole.ADMIN, UserRole.TUTOR),
+  CategoryController.changeCategoryStatus,
+);
 
 export const CategoryRoutes = router;

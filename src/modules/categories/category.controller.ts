@@ -129,10 +129,36 @@ const deleteCategory = async (req: Request, res: Response) => {
   }
 };
 
+const changeCategoryStatus = async (req: Request, res: Response) => {
+  const { categoryId } = req.params;
+  const { isActive } = req.body;
+  const requestedUser = req.user;
+  try {
+    const updatedCategory = await CategoryService.changeCategoryStatus(
+      Number(categoryId),
+      Boolean(isActive),
+      requestedUser,
+    );
+    res.status(200).json({
+      success: true,
+      message: "Category status updated successfully",
+      data: updatedCategory,
+    });
+  } catch (error: any) {
+    console.error("Error updating category status:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update category status",
+      error: error.message?.split("\n").pop().trim() || error.message || error,
+    });
+  }
+};
+
 export const CategoryController = {
   getAllCategories,
   createCategory,
   getCategoryById,
   updateCategory,
   deleteCategory,
+  changeCategoryStatus,
 };

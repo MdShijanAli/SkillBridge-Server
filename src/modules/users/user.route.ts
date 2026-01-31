@@ -25,5 +25,10 @@ router.patch(
   authMiddleware(UserRole.ADMIN),
   UserController.bannedUser,
 );
+router.delete(
+  "/:userId",
+  authMiddleware(UserRole.ADMIN, UserRole.TUTOR, UserRole.STUDENT),
+  UserController.deleteUser,
+);
 
 export const UserRoutes = router;

@@ -126,10 +126,33 @@ const bannedUser = async (req: Request, res: Response) => {
   }
 };
 
+const deleteUser = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const requestedUser = req.user;
+  try {
+    const deletedUser = await UserService.deleteUser(
+      userId as string,
+      requestedUser,
+    );
+    res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+      data: deletedUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete user",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
 export const UserController = {
   updateUser,
   getAllUsers,
   getUserDetails,
   changeUserStatus,
   bannedUser,
+  deleteUser,
 };

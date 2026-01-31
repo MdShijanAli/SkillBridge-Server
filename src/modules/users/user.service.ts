@@ -87,10 +87,23 @@ const bannedUser = async (userId: string, is_banned: string) => {
   return updatedUser;
 };
 
+const deleteUser = async (userId: string, requestedUser: Partial<User>) => {
+  if (requestedUser.id !== userId && requestedUser.role !== "ADMIN") {
+    throw new Error(
+      "You are not authorized to delete this user. You can only delete your own profile.",
+    );
+  }
+  const deletedUser = await prisma.user.delete({
+    where: { id: userId },
+  });
+  return deletedUser;
+};
+
 export const UserService = {
   updateUser,
   getAllUsers,
   getUserDetails,
   changeUserStatus,
   bannedUser,
+  deleteUser,
 };

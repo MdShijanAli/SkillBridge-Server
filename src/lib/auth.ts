@@ -54,6 +54,16 @@ export const auth = betterAuth({
         defaultValue: false,
         fieldName: "is_banned",
       },
+      bio: {
+        type: "string",
+        required: false,
+        fieldName: "bio",
+      },
+      location: {
+        type: "string",
+        required: false,
+        fieldName: "location",
+      },
     },
   },
   emailAndPassword: {

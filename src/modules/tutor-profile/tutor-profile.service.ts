@@ -18,6 +18,21 @@ const createTutorProfile = async (
   return tutorProfile;
 };
 
+const updateTutorProfile = async (
+  data: Partial<TutorProfileCreateInput>,
+  requestedUser: any,
+) => {
+  if (requestedUser.role !== UserRole.TUTOR) {
+    throw new Error("Only tutors can update tutor profiles");
+  }
+  const tutorProfile = await prisma.tutorProfile.update({
+    where: { userId: requestedUser.id },
+    data,
+  });
+  return tutorProfile;
+};
+
 export const TutorProfileService = {
   createTutorProfile,
+  updateTutorProfile,
 };

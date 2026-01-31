@@ -9,5 +9,10 @@ router.post(
   authMiddleware(UserRole.TUTOR),
   TutorProfileController.createTutorProfile,
 );
+router.put(
+  "/",
+  authMiddleware(UserRole.TUTOR),
+  TutorProfileController.updateTutorProfile,
+);
 
 export const TutorProfileRoutes = router;

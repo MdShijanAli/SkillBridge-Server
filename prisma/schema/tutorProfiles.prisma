@@ -7,6 +7,7 @@ model TutorProfile {
     education       String?  @db.Text
     specialization  String?  @db.VarChar(255)
     languages       String[] @default([])
+    subjects        String[] @default([])
     videoIntroUrl   String?  @map("video_intro_url") @db.VarChar(500)
     averageRating   Decimal  @default(0) @map("average_rating") @db.Decimal(3, 2)
     totalReviews    Int      @default(0) @map("total_reviews")

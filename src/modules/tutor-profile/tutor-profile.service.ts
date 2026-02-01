@@ -1,4 +1,7 @@
-import { TutorProfileCreateInput } from "../../../generated/prisma/models";
+import {
+  TutorProfileCreateInput,
+  TutorProfileUpdateInput,
+} from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
 import { UserRole } from "../../middlewares/auth";
 
@@ -19,7 +22,7 @@ const createTutorProfile = async (
 };
 
 const updateTutorProfile = async (
-  data: Partial<TutorProfileCreateInput>,
+  data: Partial<TutorProfileUpdateInput>,
   requestedUser: any,
 ) => {
   if (requestedUser.role !== UserRole.TUTOR) {
@@ -38,6 +41,15 @@ const getTutorProfile = async (requestedUser: any) => {
   }
   const tutorProfile = await prisma.tutorProfile.findUnique({
     where: { userId: requestedUser.id },
+    include: {
+      user: true,
+      categories: {
+        include: {
+          category: true,
+        },
+      },
+      availability: true,
+    },
   });
   return tutorProfile;
 };

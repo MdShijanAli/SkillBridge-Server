@@ -14,5 +14,10 @@ router.put(
   authMiddleware(UserRole.TUTOR),
   TutorProfileController.updateTutorProfile,
 );
+router.get(
+  "/",
+  authMiddleware(UserRole.TUTOR),
+  TutorProfileController.getTutorProfile,
+);
 
 export const TutorProfileRoutes = router;

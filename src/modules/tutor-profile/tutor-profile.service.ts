@@ -32,7 +32,18 @@ const updateTutorProfile = async (
   return tutorProfile;
 };
 
+const getTutorProfile = async (requestedUser: any) => {
+  if (requestedUser.role !== UserRole.TUTOR) {
+    throw new Error("Only tutors can access tutor profiles");
+  }
+  const tutorProfile = await prisma.tutorProfile.findUnique({
+    where: { userId: requestedUser.id },
+  });
+  return tutorProfile;
+};
+
 export const TutorProfileService = {
   createTutorProfile,
   updateTutorProfile,
+  getTutorProfile,
 };

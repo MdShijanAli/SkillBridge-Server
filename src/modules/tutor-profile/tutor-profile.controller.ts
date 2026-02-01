@@ -45,7 +45,28 @@ const updateTutorProfile = async (req: Request, res: Response) => {
   }
 };
 
+const getTutorProfile = async (req: Request, res: Response) => {
+  const requestedUser = req.user;
+  try {
+    const tutorProfile =
+      await TutorProfileService.getTutorProfile(requestedUser);
+    res.status(200).json({
+      success: true,
+      message: "Tutor profile retrieved successfully",
+      data: tutorProfile,
+    });
+  } catch (error: any) {
+    console.error("Error retrieving tutor profile:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve tutor profile",
+      error: error.message?.split("\n").pop().trim() || error.message || error,
+    });
+  }
+};
+
 export const TutorProfileController = {
   createTutorProfile,
   updateTutorProfile,
+  getTutorProfile,
 };

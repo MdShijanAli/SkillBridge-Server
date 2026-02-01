@@ -27,13 +27,20 @@ const updateUser = async (req: Request, res: Response) => {
 };
 
 const getAllUsers = async (req: Request, res: Response) => {
-  const { page = 1, limit = 10, search = "", filter = "" } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    search = "",
+    filter = "",
+    role = "",
+  } = req.query;
   try {
     const users = await UserService.getAllUsers({
       page: Number(page),
       pageSize: Number(limit),
       search: String(search),
       filter: String(filter),
+      role: String(role),
     });
     formatResultWithPagination(
       res,

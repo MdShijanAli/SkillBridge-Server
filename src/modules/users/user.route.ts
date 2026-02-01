@@ -5,6 +5,7 @@ import { authMiddleware, UserRole } from "../../middlewares/auth";
 const router = express.Router();
 
 router.get("/", authMiddleware(UserRole.ADMIN), UserController.getAllUsers);
+
 router.put(
   "/:userId",
   authMiddleware(UserRole.ADMIN, UserRole.TUTOR, UserRole.STUDENT),

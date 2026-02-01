@@ -30,31 +30,40 @@ const getAllUsers = async ({
   pageSize,
   search,
   filter,
+  role,
 }: {
   page: number;
   pageSize: number;
   search: string;
   filter: string;
+  role?: string;
 }) => {
+  const whereClause: any = {
+    OR: [
+      { name: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+      { phone: { contains: search, mode: "insensitive" } },
+    ],
+  };
+
+  if (role) {
+    whereClause.role = role;
+  }
+
   const userData = await prisma.user.findMany({
     skip: (page - 1) * pageSize,
     take: pageSize,
-    where: {
-      OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search, mode: "insensitive" } },
-      ],
+    where: whereClause,
+    include: {
+      tutorProfile: true,
+      studentBookings: true,
+      tutorBookings: true,
+      reviews: true,
+      receivedReviews: true,
     },
   });
   const total = await prisma.user.count({
-    where: {
-      OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search, mode: "insensitive" } },
-      ],
-    },
+    where: whereClause,
   });
 
   const users = {

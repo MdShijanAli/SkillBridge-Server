@@ -24,8 +24,11 @@ const createAvailabilityService = async (req: Request, res: Response) => {
 };
 
 const getAllAvailabilities = async (req: Request, res: Response) => {
+  const tutorProfileId = Number(req.query.tutorProfileId);
+  console.log("Tutor Profile ID from query:", tutorProfileId);
   try {
-    const result = await availabilityService.getAllAvailabilities();
+    const result =
+      await availabilityService.getAllAvailabilities(tutorProfileId);
     res.status(200).json({
       success: true,
       message: "Availabilities fetched successfully",

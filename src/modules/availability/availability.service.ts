@@ -13,6 +13,7 @@ const createAvailabilityService = async (
     throw new Error("Only tutors can create availability");
   }
   const availabilityData = { ...data };
+  console.log("Availability Data to be created:", availabilityData);
 
   const availiblityData = await prisma.availability.create({
     data: availabilityData,
@@ -37,8 +38,10 @@ const updateAvailabilityService = async (
   return updatedAvailability;
 };
 
-const getAllAvailabilities = async () => {
-  const availabilities = await prisma.availability.findMany();
+const getAllAvailabilities = async (tutorProfileId: number) => {
+  const availabilities = await prisma.availability.findMany({
+    where: { tutorProfileId },
+  });
   return availabilities;
 };
 

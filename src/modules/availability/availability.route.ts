@@ -10,5 +10,20 @@ router.post(
   AvalablityController.createAvailabilityService,
 );
 router.get("/", AvalablityController.getAllAvailabilities);
+router.put(
+  "/:id",
+  authMiddleware(UserRole.TUTOR),
+  AvalablityController.updateAvailabilityService,
+);
+router.delete(
+  "/:id",
+  authMiddleware(UserRole.TUTOR),
+  AvalablityController.deleteAvailabilityService,
+);
+router.patch(
+  "/:id/status",
+  authMiddleware(UserRole.TUTOR),
+  AvalablityController.changeStatusService,
+);
 
 export const AvailabilityRoutes = router;

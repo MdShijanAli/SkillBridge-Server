@@ -65,7 +65,7 @@ const getAllTutors = async ({
 };
 
 const getTutorById = async (userId: string) => {
-  const tutor = await prisma.user.findFirst({
+  const tutor = await prisma.user.findUnique({
     where: {
       id: userId,
       role: UserRole.TUTOR,
@@ -80,21 +80,9 @@ const getTutorById = async (userId: string) => {
               category: true,
             },
           },
-          availability: true,
-        },
-      },
-      receivedReviews: {
-        include: {
-          reviewer: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
+          availability: {
+            where: { isActive: true },
           },
-        },
-        orderBy: {
-          createdAt: "desc",
         },
       },
     },

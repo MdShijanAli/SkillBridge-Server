@@ -3,7 +3,16 @@ import { TutorService } from "./tutor.service";
 import { formatResultWithPagination } from "../../utils/formatResult";
 
 const getAllTutors = async (req: Request, res: Response) => {
-  const { page = 1, limit = 10, search = "", categoryId } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    search = "",
+    categoryId,
+    minPrice = 0,
+    maxPrice = 200,
+    sortBy,
+    sortOrder,
+  } = req.query;
 
   try {
     const tutors = await TutorService.getAllTutors({
@@ -11,6 +20,13 @@ const getAllTutors = async (req: Request, res: Response) => {
       pageSize: Number(limit),
       search: String(search),
       categoryId: categoryId ? Number(categoryId) : undefined,
+      minPrice: Number(minPrice),
+      maxPrice: Number(maxPrice),
+      sortBy: sortBy ? String(sortBy) : undefined,
+      sortOrder:
+        sortOrder === "asc" || sortOrder === "desc"
+          ? (sortOrder as "asc" | "desc")
+          : undefined,
     });
 
     formatResultWithPagination(

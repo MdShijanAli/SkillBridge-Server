@@ -6,11 +6,19 @@ const getAllTutors = async ({
   pageSize,
   search,
   categoryId,
+  minPrice,
+  maxPrice,
+  sortBy,
+  sortOrder,
 }: {
   page: number;
   pageSize: number;
   search: string;
   categoryId?: number;
+  minPrice: number;
+  maxPrice: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }) => {
   const whereClause: any = {
     role: UserRole.TUTOR,
@@ -22,7 +30,6 @@ const getAllTutors = async ({
     ],
   };
 
-  // Filter by category if provided
   if (categoryId) {
     whereClause.tutorProfile = {
       categories: {
@@ -31,6 +38,39 @@ const getAllTutors = async ({
         },
       },
     };
+  }
+
+  if (minPrice !== undefined && maxPrice !== undefined) {
+    whereClause.tutorProfile = {
+      ...whereClause.tutorProfile,
+      hourlyRate: {
+        gte: minPrice,
+        lte: maxPrice,
+      },
+    };
+  }
+
+  let orderByClause: any = { createdAt: "desc" };
+
+  if (sortBy && sortOrder) {
+    const tutorProfileFields = [
+      "hourlyRate",
+      "totalReviews",
+      "averageRating",
+      "yearsExperience",
+    ];
+
+    if (tutorProfileFields.includes(sortBy)) {
+      orderByClause = {
+        tutorProfile: {
+          [sortBy]: sortOrder,
+        },
+      };
+    } else {
+      orderByClause = {
+        [sortBy]: sortOrder,
+      };
+    }
   }
 
   const tutors = await prisma.user.findMany({
@@ -49,9 +89,7 @@ const getAllTutors = async ({
         },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: orderByClause,
   });
 
   const total = await prisma.user.count({

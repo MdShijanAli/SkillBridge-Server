@@ -9,5 +9,10 @@ router.get(
   authMiddleware(UserRole.STUDENT),
   DashboardController.GetStudentDashboardStats,
 );
+router.get(
+  "/tutor-stats",
+  authMiddleware(UserRole.TUTOR),
+  DashboardController.getTutorDashboardStats,
+);
 
 export const DashboardRoutes = router;

@@ -15,6 +15,7 @@ import { AvailabilityRoutes } from "./modules/availability/availability.route";
 import { TutorProfileRoutes } from "./modules/tutor-profile/tutor-profile.route";
 import { TutorRoutes } from "./modules/tutors/tutor.route";
 import { BookingRoutes } from "./modules/booking/booking.route";
+import { ReviewRoutes } from "./modules/reviews/reviews.route";
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ app.use("/api/categories", CategoryRoutes);
 app.use("/api/availabilities", AvailabilityRoutes);
 app.use("/api/tutor-profiles", TutorProfileRoutes);
 app.use("/api/bookings", BookingRoutes);
+app.use("/api/reviews", ReviewRoutes);
 
 app.use("/api/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is healthy" });

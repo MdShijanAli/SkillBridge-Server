@@ -81,6 +81,7 @@ const getMyBookings = async (
       },
       student: true,
       category: true,
+      review: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -133,6 +134,8 @@ const getAllBookingsForTutor = async (
         },
       },
       student: true,
+      category: true,
+      review: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -194,6 +197,8 @@ const getAllBookings = async (
         },
       },
       student: true,
+      category: true,
+      review: true,
     },
     orderBy: {
       createdAt: "desc",

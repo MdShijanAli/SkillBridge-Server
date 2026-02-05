@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { BookingService } from "./booking.service";
 import { formatResultWithPagination } from "../../utils/formatResult";
+import { BookingStatus } from "../../../generated/prisma/enums";
 
 const CreateBooking = async (req: Request, res: Response) => {
   const requestedUser = req.user;
@@ -156,6 +157,30 @@ const DeleteBooking = async (req: Request, res: Response) => {
   }
 };
 
+const ChangeBookingStatus = async (req: Request, res: Response) => {
+  const bookingId = req.params.bookingId;
+  const { status } = req.body;
+  const requestedUser = req.user;
+  try {
+    const updatedBooking = await BookingService.ChangeBookingStatus(
+      Number(bookingId),
+      status,
+      requestedUser,
+    );
+    res.status(200).json({
+      message: "Booking status updated successfully",
+      success: true,
+      data: updatedBooking,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: "Failed to update booking status",
+      error: error.message?.split("\n").pop().trim() || error.message || error,
+    });
+  }
+};
+
 export const BookingController = {
   CreateBooking,
   GetBookingsForTutor,
@@ -163,4 +188,5 @@ export const BookingController = {
   getMyBookings,
   GetBookingById,
   DeleteBooking,
+  ChangeBookingStatus,
 };

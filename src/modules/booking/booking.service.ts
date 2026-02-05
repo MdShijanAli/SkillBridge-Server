@@ -2,6 +2,7 @@ import { Request } from "express";
 import { BookingUncheckedCreateInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
 import { UserRole } from "../../middlewares/auth";
+import { BookingStatus } from "../../../generated/prisma/client";
 
 const CreateBooking = async (
   data: BookingUncheckedCreateInput,
@@ -79,6 +80,7 @@ const getMyBookings = async (
         },
       },
       student: true,
+      category: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -266,6 +268,48 @@ const DeleteBooking = async (
   });
 };
 
+const ChangeBookingStatus = async (
+  bookingId: number,
+  status: BookingStatus,
+  requestedUser: Request["user"],
+) => {
+  if (!requestedUser) {
+    throw new Error("Please login to change the booking status.");
+  }
+  const booking = await prisma.booking.findUnique({
+    where: {
+      id: bookingId,
+    },
+  });
+  if (!booking) {
+    throw new Error("Booking not found.");
+  }
+  if (
+    requestedUser.role === UserRole.TUTOR &&
+    booking.tutorId !== requestedUser.id
+  ) {
+    throw new Error(
+      "You are not authorized to change the status of this booking.",
+    );
+  }
+  if (
+    requestedUser.role === UserRole.STUDENT &&
+    booking.studentId !== requestedUser.id
+  ) {
+    throw new Error(
+      "You are not authorized to change the status of this booking.",
+    );
+  }
+  await prisma.booking.update({
+    where: {
+      id: bookingId,
+    },
+    data: {
+      status,
+    },
+  });
+};
+
 export const BookingService = {
   CreateBooking,
   getMyBookings,
@@ -273,4 +317,5 @@ export const BookingService = {
   getAllBookings,
   GetBookingById,
   DeleteBooking,
+  ChangeBookingStatus,
 };

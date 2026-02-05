@@ -35,4 +35,10 @@ router.delete(
   BookingController.DeleteBooking,
 );
 
+router.patch(
+  "/:bookingId/status",
+  authMiddleware(UserRole.ADMIN, UserRole.TUTOR, UserRole.STUDENT),
+  BookingController.ChangeBookingStatus,
+);
+
 export const BookingRoutes = router;

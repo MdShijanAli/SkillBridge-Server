@@ -1,3 +1,4 @@
+import { Request } from "express";
 import { prisma } from "../../lib/prisma";
 import { UserRole } from "../../middlewares/auth";
 
@@ -129,7 +130,42 @@ const getTutorById = async (userId: string) => {
   return tutor;
 };
 
+const getTutorReviews = async (requestedUser: Request["user"]) => {
+  if (!requestedUser) {
+    throw new Error("Please login to view reviews.");
+  }
+  if (requestedUser.role !== UserRole.TUTOR) {
+    throw new Error("Only tutors can view their reviews.");
+  }
+
+  const reviews = await prisma.review.findMany({
+    where: { tutorId: requestedUser.id },
+    include: {
+      student: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      booking: {
+        select: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return reviews;
+};
+
 export const TutorService = {
   getAllTutors,
   getTutorById,
+  getTutorReviews,
 };

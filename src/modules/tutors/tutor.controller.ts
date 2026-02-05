@@ -77,7 +77,26 @@ const getTutorDetails = async (req: Request, res: Response) => {
   }
 };
 
+const getTutorReviews = async (req: Request, res: Response) => {
+  const requestedUser = req.user;
+  try {
+    const response = await TutorService.getTutorReviews(requestedUser);
+    res.status(200).json({
+      success: true,
+      message: "Tutor reviews fetched successfully",
+      data: response,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch tutor reviews",
+      error: error.message?.split("\n").pop().trim() || error.message || error,
+    });
+  }
+};
+
 export const TutorController = {
   getAllTutors,
   getTutorDetails,
+  getTutorReviews,
 };

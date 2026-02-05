@@ -3,7 +3,8 @@ model Booking {
     studentId          String        @map("student_id")
     tutorId            String        @map("tutor_id")
     categoryId         Int           @map("category_id")
-    scheduledAt        DateTime      @map("scheduled_at")
+    scheduleDate       String
+    scheduleTime       String
     duration           Int
     status             BookingStatus @default(CONFIRMED)
     price              Decimal       @db.Decimal(10, 2)
@@ -21,7 +22,6 @@ model Booking {
 
     @@index([studentId])
     @@index([tutorId])
-    @@index([scheduledAt])
     @@index([status])
     @@map("bookings")
 }

@@ -23,6 +23,30 @@ const CreateReview = async (
       ...reviewData,
     },
   });
+
+  const tutorProfile = await prisma.tutorProfile.findUnique({
+    where: { userId: data.tutorId },
+  });
+
+  if (tutorProfile) {
+    const reviewStats = await prisma.review.aggregate({
+      where: { tutorId: data.tutorId },
+      _avg: { rating: true },
+      _count: { id: true },
+    });
+
+    const totalReviews = reviewStats._count.id;
+    const averageRating = reviewStats._avg.rating || 0;
+
+    await prisma.tutorProfile.update({
+      where: { userId: data.tutorId },
+      data: {
+        totalReviews,
+        averageRating: Number(averageRating.toFixed(2)),
+      },
+    });
+  }
+
   return review;
 };
 

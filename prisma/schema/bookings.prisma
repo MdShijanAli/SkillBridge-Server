@@ -2,7 +2,7 @@ model Booking {
     id                 Int           @id @default(autoincrement())
     studentId          String        @map("student_id")
     tutorId            String        @map("tutor_id")
-    categoryId         Int           @map("category_id")
+    subject            String        @default("Bangla")
     scheduleDate       String
     scheduleTime       String
     duration           Int
@@ -15,10 +15,11 @@ model Booking {
     createdAt          DateTime      @default(now()) @map("created_at")
     updatedAt          DateTime      @updatedAt @map("updated_at")
 
-    student  User     @relation("StudentBookings", fields: [studentId], references: [id], onDelete: Cascade)
-    tutor    User     @relation("TutorBookings", fields: [tutorId], references: [id], onDelete: Cascade)
-    category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-    review   Review?
+    student    User      @relation("StudentBookings", fields: [studentId], references: [id], onDelete: Cascade)
+    tutor      User      @relation("TutorBookings", fields: [tutorId], references: [id], onDelete: Cascade)
+    review     Review?
+    category   Category? @relation(fields: [categoryId], references: [id])
+    categoryId Int?
 
     @@index([studentId])
     @@index([tutorId])

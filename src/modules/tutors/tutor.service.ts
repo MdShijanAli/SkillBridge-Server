@@ -124,6 +124,23 @@ const getTutorById = async (userId: string) => {
           },
         },
       },
+      receivedReviews: {
+        include: {
+          student: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+        where: {
+          isPublic: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
     },
   });
 

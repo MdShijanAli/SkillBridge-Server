@@ -1,6 +1,7 @@
 import { Request } from "express";
 import { UserRole } from "../../middlewares/auth";
 import { prisma } from "../../lib/prisma";
+import { BookingStatus } from "../../../generated/prisma/enums";
 
 const GetStudentDashboardStats = async (requestedUser: Request["user"]) => {
   if (!requestedUser) {
@@ -27,28 +28,28 @@ const GetStudentDashboardStats = async (requestedUser: Request["user"]) => {
     prisma.booking.count({
       where: {
         studentId: requestedUser.id,
-        status: "CONFIRMED",
+        status: BookingStatus.CONFIRMED,
       },
     }),
 
     prisma.booking.count({
       where: {
         studentId: requestedUser.id,
-        status: "COMPLETED",
+        status: BookingStatus.COMPLETED,
       },
     }),
 
     prisma.booking.count({
       where: {
         studentId: requestedUser.id,
-        status: "CANCELLED",
+        status: BookingStatus.CANCELLED,
       },
     }),
 
     prisma.booking.aggregate({
       where: {
         studentId: requestedUser.id,
-        status: "COMPLETED",
+        status: BookingStatus.COMPLETED,
       },
       _sum: { duration: true },
     }),
@@ -60,13 +61,13 @@ const GetStudentDashboardStats = async (requestedUser: Request["user"]) => {
     prisma.booking.aggregate({
       where: {
         studentId: requestedUser.id,
-        status: { in: ["COMPLETED", "CONFIRMED"] },
+        status: { in: [BookingStatus.COMPLETED, BookingStatus.CONFIRMED] },
       },
       _sum: { price: true },
     }),
 
     prisma.booking.findMany({
-      where: { studentId: requestedUser.id, status: "CONFIRMED" },
+      where: { studentId: requestedUser.id, status: BookingStatus.CONFIRMED },
       take: 2,
       orderBy: { createdAt: "desc" },
       include: {
@@ -129,14 +130,14 @@ const GetTutorDashboardStats = async (requestedUser: Request["user"]) => {
     prisma.booking.count({
       where: {
         tutorId: requestedUser.id,
-        status: "CONFIRMED",
+        status: BookingStatus.CONFIRMED,
       },
     }),
 
     prisma.booking.aggregate({
       where: {
         tutorId: requestedUser.id,
-        status: "COMPLETED",
+        status: BookingStatus.COMPLETED,
       },
       _sum: { price: true },
     }),
@@ -144,7 +145,7 @@ const GetTutorDashboardStats = async (requestedUser: Request["user"]) => {
     prisma.booking.aggregate({
       where: {
         tutorId: requestedUser.id,
-        status: "COMPLETED",
+        status: BookingStatus.COMPLETED,
         createdAt: {
           gte: new Date(new Date().setDate(new Date().getDate() - 7)),
         },
@@ -155,7 +156,7 @@ const GetTutorDashboardStats = async (requestedUser: Request["user"]) => {
     prisma.booking.aggregate({
       where: {
         tutorId: requestedUser.id,
-        status: "COMPLETED",
+        status: BookingStatus.COMPLETED,
         createdAt: {
           gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
         },
@@ -184,7 +185,7 @@ const GetTutorDashboardStats = async (requestedUser: Request["user"]) => {
 
     prisma.booking
       .groupBy({
-        by: ["categoryId"],
+        by: ["subject"],
         where: { tutorId: requestedUser.id },
       })
       .then((groups) => groups.length),
@@ -194,7 +195,6 @@ const GetTutorDashboardStats = async (requestedUser: Request["user"]) => {
     }),
   ]);
 
-  // Tutor-specific dashboard stats can be implemented here
   return {
     totalSessions,
     upcomingSessions,

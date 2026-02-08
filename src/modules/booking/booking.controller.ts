@@ -26,26 +26,17 @@ const CreateBooking = async (req: Request, res: Response) => {
 const GetBookingsForTutor = async (req: Request, res: Response) => {
   const tutorId = req.params.tutorId;
   const requestedUser = req.user;
-  const { page = 1, limit = 10, search } = req.query;
   try {
     const bookings = await BookingService.getAllBookingsForTutor(
       tutorId,
       requestedUser,
-      Number(page),
-      Number(limit),
-      search as string | undefined,
     );
-    formatResultWithPagination(
-      res,
-      bookings.data,
-      "Bookings fetched successfully",
-      {
-        currentPage: Number(page),
-        pageSize: Number(limit),
-        totalItems: bookings.total,
-      },
-      "/bookings/tutor/" + tutorId,
-    );
+    res.status(200).json({
+      message: "Bookings for tutor fetched successfully",
+      success: true,
+      data: bookings.data,
+      total: bookings.total,
+    });
   } catch (error: any) {
     res.status(400).json({
       success: false,

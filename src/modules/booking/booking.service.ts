@@ -97,9 +97,6 @@ const getMyBookings = async (
 const getAllBookingsForTutor = async (
   tutorId: string,
   requestedUser: Request["user"],
-  page: number,
-  limit: number,
-  search?: string,
 ) => {
   if (!requestedUser) {
     throw new Error("Please login to view bookings.");
@@ -113,19 +110,9 @@ const getAllBookingsForTutor = async (
 
   const whereClause = {
     tutorId: tutorId,
-    ...(search && {
-      student: {
-        name: {
-          contains: search,
-          mode: "insensitive",
-        },
-      },
-    }),
   };
 
   const bookings = await prisma.booking.findMany({
-    skip: (page - 1) * limit,
-    take: limit,
     where: whereClause,
     include: {
       tutor: {

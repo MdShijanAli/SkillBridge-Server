@@ -18,6 +18,18 @@ const createAvailabilityService = async (
   const availiblityData = await prisma.availability.create({
     data: availabilityData,
   });
+
+  const getTotalSessions = await prisma.availability.count({
+    where: { tutorProfileId: availiblityData.tutorProfileId },
+  });
+
+  await prisma.tutorProfile.update({
+    where: { id: availiblityData.tutorProfileId },
+    data: {
+      totalSessions: getTotalSessions,
+    },
+  });
+
   return availiblityData;
 };
 
@@ -52,9 +64,30 @@ const deleteAvailabilityService = async (
   if (requestedUser.role !== UserRole.TUTOR) {
     throw new Error("Only tutors can delete availability");
   }
+
+  // Get the availability to find the tutorProfileId
+  const availability = await prisma.availability.findUnique({
+    where: { id: availabilityId },
+  });
+
+  if (!availability) {
+    throw new Error("Availability not found");
+  }
+
   await prisma.availability.delete({
     where: { id: availabilityId },
   });
+
+  // Decrement totalSessions count in TutorProfile
+  await prisma.tutorProfile.update({
+    where: { id: availability.tutorProfileId },
+    data: {
+      totalSessions: {
+        decrement: 1,
+      },
+    },
+  });
+
   return { message: "Availability deleted successfully" };
 };
 

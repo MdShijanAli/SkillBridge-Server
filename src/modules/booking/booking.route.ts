@@ -37,7 +37,7 @@ router.delete(
 
 router.patch(
   "/:bookingId/status",
-  authMiddleware(UserRole.ADMIN, UserRole.TUTOR, UserRole.STUDENT),
+  authMiddleware(UserRole.TUTOR, UserRole.STUDENT),
   BookingController.ChangeBookingStatus,
 );
 

@@ -292,6 +292,23 @@ const ChangeBookingStatus = async (
       "You are not authorized to change the status of this booking.",
     );
   }
+  if (
+    requestedUser.role === UserRole.STUDENT &&
+    status === BookingStatus.COMPLETED
+  ) {
+    throw new Error(
+      "Students are not allowed to complete bookings. Please contact the tutor to complete the booking.",
+    );
+  }
+  if (
+    requestedUser.role === UserRole.TUTOR &&
+    status === BookingStatus.CANCELLED
+  ) {
+    throw new Error(
+      "Tutors are not allowed to cancel bookings. Please contact the student to cancel the booking.",
+    );
+  }
+
   await prisma.booking.update({
     where: {
       id: bookingId,

@@ -25,30 +25,28 @@ const getAllTutors = async ({
     role: UserRole.TUTOR,
     is_active: true,
     is_banned: false,
-    OR: [
-      { name: { contains: search, mode: "insensitive" } },
-      { email: { contains: search, mode: "insensitive" } },
-    ],
   };
 
+  const tutorProfileConditions: any = {};
+
   if (categoryId) {
-    whereClause.tutorProfile = {
-      categories: {
-        some: {
-          categoryId: categoryId,
-        },
+    tutorProfileConditions.categories = {
+      some: {
+        categoryId: categoryId,
       },
     };
   }
 
   if (minPrice !== undefined && maxPrice !== undefined) {
-    whereClause.tutorProfile = {
-      ...whereClause.tutorProfile,
-      hourlyRate: {
-        gte: minPrice,
-        lte: maxPrice,
-      },
+    tutorProfileConditions.hourlyRate = {
+      gte: minPrice,
+      lte: maxPrice,
     };
+  }
+
+  // Apply tutorProfile conditions if any exist
+  if (Object.keys(tutorProfileConditions).length > 0) {
+    whereClause.tutorProfile = tutorProfileConditions;
   }
 
   let orderByClause: any = { createdAt: "desc" };
@@ -75,8 +73,6 @@ const getAllTutors = async ({
   }
 
   const tutors = await prisma.user.findMany({
-    skip: (page - 1) * pageSize,
-    take: pageSize,
     where: whereClause,
     include: {
       tutorProfile: {
@@ -93,12 +89,33 @@ const getAllTutors = async ({
     orderBy: orderByClause,
   });
 
-  const total = await prisma.user.count({
-    where: whereClause,
-  });
+  let filteredTutors = tutors;
+  if (search && search.trim()) {
+    const searchLower = search.toLowerCase();
+    filteredTutors = tutors.filter((tutor) => {
+      const matchesBasicFields =
+        tutor.name?.toLowerCase().includes(searchLower) ||
+        tutor.email?.toLowerCase().includes(searchLower) ||
+        tutor.bio?.toLowerCase().includes(searchLower) ||
+        tutor.location?.toLowerCase().includes(searchLower);
+
+      const matchesSubjects =
+        tutor.tutorProfile?.subjects?.some((subject) =>
+          subject.toLowerCase().includes(searchLower),
+        ) || false;
+
+      return matchesBasicFields || matchesSubjects;
+    });
+  }
+
+  const total = filteredTutors.length;
+  const paginatedTutors = filteredTutors.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
 
   return {
-    data: tutors,
+    data: paginatedTutors,
     total,
   };
 };

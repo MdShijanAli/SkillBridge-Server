@@ -40,11 +40,11 @@ const getAllTutors = async (req: Request, res: Response) => {
       },
       "/tutors",
     );
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch tutors",
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error.message?.split("\n").pop().trim() || error.message || error,
     });
   }
 };

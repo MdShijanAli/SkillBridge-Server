@@ -28,6 +28,7 @@ const getAllCategories = async (req: Request, res: Response) => {
       pageSize: Number(limit),
       search: String(search),
       filter: String(filter),
+      userRole: req.user?.role,
     });
     formatResultWithPagination(
       res,

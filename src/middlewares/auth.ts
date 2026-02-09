@@ -55,3 +55,29 @@ export const authMiddleware = (...roles: UserRole[]) => {
     next();
   };
 };
+
+export const optionalAuthMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const session = await betterAuth.api.getSession({
+      headers: req.headers as Record<string, string>,
+    });
+
+    if (session && session.user) {
+      req.user = {
+        id: session.user.id,
+        name: session.user.name || "",
+        email: session.user.email || "",
+        role: session.user.role || UserRole.STUDENT,
+        emailVerified: session.user.emailVerified || false,
+      };
+    }
+  } catch (error) {
+    // Silently continue if session check fails
+  }
+
+  next();
+};

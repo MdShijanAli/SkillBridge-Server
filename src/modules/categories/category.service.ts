@@ -13,11 +13,13 @@ const getAllCategories = async ({
   pageSize,
   search,
   filter,
+  userRole,
 }: {
   page: number;
   pageSize: number;
   search: string;
   filter: string;
+  userRole?: string;
 }) => {
   const whereClause: any = {};
 
@@ -26,6 +28,11 @@ const getAllCategories = async ({
       { name: { contains: search, mode: "insensitive" } },
       { description: { contains: search, mode: "insensitive" } },
     ];
+  }
+
+  // Non-admin users can only see active categories
+  if (userRole !== "ADMIN") {
+    whereClause.isActive = true;
   }
 
   const categoriesData = await prisma.category.findMany({

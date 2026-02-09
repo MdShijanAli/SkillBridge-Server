@@ -14,6 +14,7 @@ model User {
     profile_image String?
     is_active     Boolean @default(true)
     is_banned     Boolean @default(false)
+    is_featured   Boolean @default(false)
     bio           String?
     location      String?
 

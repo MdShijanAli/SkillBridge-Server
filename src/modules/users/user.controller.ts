@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserService } from "./user.service";
 import { formatResultWithPagination } from "../../utils/formatResult";
+import { UserRole } from "../../middlewares/auth";
 
 const updateUser = async (req: Request, res: Response) => {
   const { userId } = req.params;
@@ -155,6 +156,31 @@ const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
+const makeFeatured = async (req: Request, res: Response) => {
+  const { tutorId } = req.params;
+  const { is_featured } = req.body;
+  const requestedUser = req.user;
+
+  try {
+    const updatedTutor = await UserService.makeFeatured(
+      tutorId,
+      Boolean(is_featured),
+      requestedUser,
+    );
+    res.status(200).json({
+      success: true,
+      message: `Tutor ${is_featured ? "marked as" : "removed from"} featured successfully`,
+      data: updatedTutor,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update tutor featured status",
+      error: error.message?.split("\n").pop().trim() || error.message || error,
+    });
+  }
+};
+
 export const UserController = {
   updateUser,
   getAllUsers,
@@ -162,4 +188,5 @@ export const UserController = {
   changeUserStatus,
   bannedUser,
   deleteUser,
+  makeFeatured,
 };

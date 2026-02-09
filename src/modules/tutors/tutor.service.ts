@@ -11,6 +11,7 @@ const getAllTutors = async ({
   maxPrice,
   sortBy,
   sortOrder,
+  is_featured,
 }: {
   page: number;
   pageSize: number;
@@ -20,6 +21,7 @@ const getAllTutors = async ({
   maxPrice: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  is_featured?: string | boolean;
 }) => {
   const whereClause: any = {
     role: UserRole.TUTOR,
@@ -35,6 +37,11 @@ const getAllTutors = async ({
         categoryId: categoryId,
       },
     };
+  }
+
+  if (is_featured !== undefined) {
+    tutorProfileConditions.isFeatured =
+      is_featured === "true" || is_featured === true;
   }
 
   if (minPrice !== undefined && maxPrice !== undefined) {

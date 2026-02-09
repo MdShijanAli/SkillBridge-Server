@@ -12,6 +12,7 @@ const getAllTutors = async (req: Request, res: Response) => {
     maxPrice = 200,
     sortBy,
     sortOrder,
+    is_featured,
   } = req.query;
 
   try {
@@ -27,6 +28,7 @@ const getAllTutors = async (req: Request, res: Response) => {
         sortOrder === "asc" || sortOrder === "desc"
           ? (sortOrder as "asc" | "desc")
           : undefined,
+      is_featured,
     });
 
     formatResultWithPagination(

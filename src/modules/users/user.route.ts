@@ -32,4 +32,10 @@ router.delete(
   UserController.deleteUser,
 );
 
+router.patch(
+  "/:tutorId/featured",
+  authMiddleware(UserRole.ADMIN),
+  UserController.makeFeatured,
+);
+
 export const UserRoutes = router;

@@ -1,3 +1,4 @@
+import { Request } from "express";
 import { User } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import { UserRole } from "../../middlewares/auth";
@@ -108,6 +109,26 @@ const deleteUser = async (userId: string, requestedUser: Partial<User>) => {
   return deletedUser;
 };
 
+const makeFeatured = async (
+  tutorId: string,
+  is_featured: boolean,
+  requestedUser: Request["user"],
+) => {
+  if (!requestedUser) {
+    throw new Error("Please login to update featured status.");
+  }
+
+  if (requestedUser.role !== UserRole.ADMIN) {
+    throw new Error("Unauthorized to update featured status.");
+  }
+
+  const updatedProfile = await prisma.user.update({
+    where: { id: tutorId },
+    data: { is_featured },
+  });
+  return updatedProfile;
+};
+
 export const UserService = {
   updateUser,
   getAllUsers,
@@ -115,4 +136,5 @@ export const UserService = {
   changeUserStatus,
   bannedUser,
   deleteUser,
+  makeFeatured,
 };

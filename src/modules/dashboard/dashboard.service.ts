@@ -198,10 +198,10 @@ const GetTutorDashboardStats = async (requestedUser: Request["user"]) => {
   return {
     totalSessions,
     upcomingSessions,
-    totalEarnings: Number(totalEarnings._sum.price || 0),
-    thisWeekEarnings: Number(thisWeekEarnings._sum.price || 0),
-    thisMonthEarnings: Number(thisMonthEarnings._sum.price || 0),
-    totalRating: Number(totalRating._avg.rating || 0),
+    totalEarnings: Number(totalEarnings._sum.price || 0).toFixed(2),
+    thisWeekEarnings: Number(thisWeekEarnings._sum.price || 0).toFixed(2),
+    thisMonthEarnings: Number(thisMonthEarnings._sum.price || 0).toFixed(2),
+    totalRating: Number(totalRating._avg.rating || 0).toFixed(2),
     totalStudents,
     hourlyRate: hourlyRate?.hourlyRate || 0,
     subjectCount,
@@ -209,7 +209,75 @@ const GetTutorDashboardStats = async (requestedUser: Request["user"]) => {
   };
 };
 
+const GetAdminDashboardStats = async (requestedUser: Request["user"]) => {
+  if (!requestedUser) {
+    throw new Error("Please login to view the dashboard.");
+  }
+  if (requestedUser.role !== UserRole.ADMIN) {
+    throw new Error("Only admins can access the dashboard.");
+  }
+
+  const [
+    totalUsers,
+    totalTutors,
+    totalStudents,
+    totalBookings,
+    totalEarnings,
+    totalCategories,
+    recentBookings,
+    recentUsers,
+  ] = await Promise.all([
+    prisma.user.count(),
+
+    prisma.user.count({ where: { role: UserRole.TUTOR } }),
+
+    prisma.user.count({ where: { role: UserRole.STUDENT } }),
+
+    prisma.booking.count(),
+
+    prisma.booking.aggregate({
+      where: { status: BookingStatus.COMPLETED },
+      _sum: { price: true },
+    }),
+
+    prisma.category.count(),
+
+    prisma.booking.findMany({
+      where: { status: BookingStatus.CONFIRMED },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        tutor: true,
+        student: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    }),
+
+    prisma.user.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  return {
+    totalUsers,
+    totalTutors,
+    totalStudents,
+    totalBookings,
+    totalEarnings: Number(totalEarnings._sum.price || 0).toFixed(2),
+    totalCategories,
+    recentBookings,
+    recentUsers,
+  };
+};
+
 export const DashboardService = {
   GetStudentDashboardStats,
   GetTutorDashboardStats,
+  GetAdminDashboardStats,
 };

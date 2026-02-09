@@ -14,5 +14,10 @@ router.get(
   authMiddleware(UserRole.TUTOR),
   DashboardController.getTutorDashboardStats,
 );
+router.get(
+  "/admin-stats",
+  authMiddleware(UserRole.ADMIN),
+  DashboardController.GetAdminDashboardStats,
+);
 
 export const DashboardRoutes = router;

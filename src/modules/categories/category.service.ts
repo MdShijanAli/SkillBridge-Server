@@ -19,39 +19,122 @@ const getAllCategories = async ({
   search: string;
   filter: string;
 }) => {
+  const whereClause: any = {};
+
+  if (search && search.trim()) {
+    whereClause.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { description: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
   const categoriesData = await prisma.category.findMany({
     skip: (page - 1) * pageSize,
     take: pageSize,
-    where: {
-      name: { contains: search, mode: "insensitive" },
-      description: { contains: search, mode: "insensitive" },
-    },
+    where: whereClause,
     orderBy: {
       updatedAt: "desc",
     },
-  });
-  const total = await prisma.category.count({
-    where: {
-      name: { contains: search, mode: "insensitive" },
-      description: { contains: search, mode: "insensitive" },
+    include: {
+      _count: {
+        select: {
+          tutorCategories: true,
+        },
+      },
+      tutorCategories: {
+        where: {
+          tutorProfile: {
+            user: {
+              is_active: true,
+              is_banned: false,
+            },
+          },
+        },
+        select: {
+          id: true,
+        },
+      },
     },
   });
-  return { data: categoriesData, total };
+
+  const categoriesWithCount = categoriesData.map((category) => ({
+    ...category,
+    tutorsCount: category.tutorCategories.length,
+    tutorCategories: undefined,
+  }));
+
+  const total = await prisma.category.count({
+    where: whereClause,
+  });
+
+  return { data: categoriesWithCount, total };
 };
 
 const getCategoryById = async (id: number) => {
   const category = await prisma.category.findUnique({
     where: { id },
+    include: {
+      _count: {
+        select: {
+          tutorCategories: true,
+        },
+      },
+      tutorCategories: {
+        where: {
+          tutorProfile: {
+            user: {
+              is_active: true,
+              is_banned: false,
+            },
+          },
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
   });
-  return category;
+
+  if (!category) return null;
+
+  return {
+    ...category,
+    tutorsCount: category.tutorCategories.length,
+    tutorCategories: undefined,
+  };
 };
 
 const updateCategory = async (id: number, data: Partial<Category>) => {
   const category = await prisma.category.update({
     where: { id },
     data,
+    include: {
+      _count: {
+        select: {
+          tutorCategories: true,
+        },
+      },
+      tutorCategories: {
+        where: {
+          tutorProfile: {
+            user: {
+              is_active: true,
+              is_banned: false,
+            },
+          },
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
   });
-  return category;
+
+  return {
+    ...category,
+    tutorsCount: category.tutorCategories.length,
+    tutorCategories: undefined,
+  };
 };
 
 const deleteCategory = async (id: number) => {
@@ -72,8 +155,33 @@ const changeCategoryStatus = async (
   const category = await prisma.category.update({
     where: { id },
     data: { isActive },
+    include: {
+      _count: {
+        select: {
+          tutorCategories: true,
+        },
+      },
+      tutorCategories: {
+        where: {
+          tutorProfile: {
+            user: {
+              is_active: true,
+              is_banned: false,
+            },
+          },
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
   });
-  return category;
+
+  return {
+    ...category,
+    tutorsCount: category.tutorCategories.length,
+    tutorCategories: undefined,
+  };
 };
 
 export const CategoryService = {

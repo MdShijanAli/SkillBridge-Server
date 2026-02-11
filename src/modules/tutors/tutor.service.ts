@@ -40,8 +40,7 @@ const getAllTutors = async ({
   }
 
   if (is_featured !== undefined) {
-    tutorProfileConditions.isFeatured =
-      is_featured === "true" || is_featured === true;
+    whereClause.is_featured = is_featured === "true" || is_featured === true;
   }
 
   if (minPrice !== undefined && maxPrice !== undefined) {

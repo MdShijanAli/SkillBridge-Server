@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import nodemailer from "nodemailer";
+import { emailOTP } from "better-auth/plugins";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -202,4 +203,120 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
   },
+  plugins: [
+    emailOTP({
+      async sendVerificationOTP({ email, otp, type }) {
+        try {
+          const htmlTemplate = `
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Your Verification Code</title>
+          </head>
+          <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7fa;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f7fa;">
+              <tr>
+                <td style="padding: 40px 20px;">
+                  <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+                          SkillBridge 🎓
+                        </h1>
+                      </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                      <td style="padding: 50px 40px; text-align: center;">
+                        <h2 style="margin: 0 0 20px; color: #1a202c; font-size: 24px; font-weight: 600;">
+                          Your Verification Code
+                        </h2>
+                        <p style="margin: 0 0 30px; color: #4a5568; font-size: 16px; line-height: 1.6;">
+                          Use the code below to verify your email address:
+                        </p>
+                        
+                        <!-- OTP Code -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 30px; margin: 30px 0; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+                          <p style="margin: 0; color: #ffffff; font-size: 42px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                            ${otp}
+                          </p>
+                        </div>
+                        
+                        <p style="margin: 25px 0 0; color: #718096; font-size: 14px; line-height: 1.6;">
+                          This code will expire in <strong>5 minutes</strong>.
+                        </p>
+                        <p style="margin: 10px 0 0; color: #718096; font-size: 14px; line-height: 1.6;">
+                          You have <strong>3 attempts</strong> to enter the correct code.
+                        </p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Security Notice -->
+                    <tr>
+                      <td style="padding: 0 40px 40px; border-top: 1px solid #e2e8f0;">
+                        <table role="presentation" style="width: 100%; margin-top: 30px; background-color: #fff5f5; border-radius: 8px; padding: 20px; border-left: 4px solid #f56565;">
+                          <tr>
+                            <td>
+                              <p style="margin: 0; color: #742a2a; font-size: 14px; line-height: 1.6;">
+                                <strong>⚠️ Security Alert:</strong> If you didn't request this code, please ignore this email. Someone may have entered your email address by mistake.
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td style="padding: 30px 40px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+                        <p style="margin: 0 0 10px; color: #718096; font-size: 14px;">
+                          Never share this code with anyone.
+                        </p>
+                        <p style="margin: 0; color: #a0aec0; font-size: 12px;">
+                          © ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <!-- Additional Footer -->
+                  <table role="presentation" style="max-width: 600px; margin: 20px auto 0;">
+                    <tr>
+                      <td style="text-align: center; padding: 0 20px;">
+                        <p style="margin: 0; color: #a0aec0; font-size: 12px; line-height: 1.5;">
+                          You're receiving this email because you requested a verification code for SkillBridge 🎓.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `;
+
+          const info = await transporter.sendMail({
+            from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
+            to: email,
+            subject: "🔐 Your Verification Code - SkillBridge 🎓",
+            text: `Your SkillBridge 🎓 verification code is: ${otp}\n\nThis code will expire in 5 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
+            html: htmlTemplate,
+          });
+
+          console.log(`📧 OTP sent to ${email}:`, info.messageId);
+        } catch (error) {
+          console.error("Error sending OTP email:", error);
+          throw new Error("Failed to send verification OTP");
+        }
+      },
+      otpLength: 6,
+      expiresIn: 300,
+      allowedAttempts: 3,
+    }),
+  ],
 });

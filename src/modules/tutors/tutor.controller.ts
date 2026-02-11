@@ -28,7 +28,12 @@ const getAllTutors = async (req: Request, res: Response) => {
         sortOrder === "asc" || sortOrder === "desc"
           ? (sortOrder as "asc" | "desc")
           : undefined,
-      is_featured,
+      is_featured:
+        is_featured == "true"
+          ? true
+          : is_featured == "false"
+            ? false
+            : undefined,
     });
 
     formatResultWithPagination(

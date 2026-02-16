@@ -24,7 +24,7 @@ const CreateBooking = async (req: Request, res: Response) => {
 };
 
 const GetBookingsForTutor = async (req: Request, res: Response) => {
-  const tutorId = req.params.tutorId;
+  const tutorId = req.params.tutorId as string;
   const requestedUser = req.user;
   try {
     const bookings = await BookingService.getAllBookingsForTutor(
@@ -78,7 +78,7 @@ const GetAllBookings = async (req: Request, res: Response) => {
 
 const getMyBookings = async (req: Request, res: Response) => {
   const requestedUser = req.user;
-  const userId = req.params.userId;
+  const userId = req.params.userId as string;
   const { page = 1, limit = 10, search } = req.query;
   try {
     const bookings = await BookingService.getMyBookings(

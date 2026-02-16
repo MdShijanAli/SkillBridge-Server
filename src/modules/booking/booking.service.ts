@@ -2,7 +2,7 @@ import { Request } from "express";
 import { BookingUncheckedCreateInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
 import { UserRole } from "../../middlewares/auth";
-import { BookingStatus } from "../../../generated/prisma/client";
+import { BookingStatus, Prisma } from "../../../generated/prisma/client";
 
 const CreateBooking = async (
   data: BookingUncheckedCreateInput,
@@ -43,15 +43,15 @@ const getMyBookings = async (
     throw new Error("Only students can view their bookings.");
   }
 
-  const whereClause = {
-    studentId: userId,
+  const whereClause: Prisma.BookingWhereInput = {
+    studentId: userId as string,
     ...(search && {
       OR: [
         {
           tutor: {
             name: {
               contains: search,
-              mode: "insensitive",
+              mode: Prisma.QueryMode.insensitive,
             },
           },
         },
@@ -60,7 +60,7 @@ const getMyBookings = async (
             tutorProfile: {
               bio: {
                 contains: search,
-                mode: "insensitive",
+                mode: Prisma.QueryMode.insensitive,
               },
             },
           },
@@ -148,7 +148,7 @@ const getAllBookings = async (
     throw new Error("Only admins can view all bookings.");
   }
 
-  const whereClause = search
+  const whereClause: Prisma.BookingWhereInput = search
     ? {
         OR: [
           {
@@ -156,7 +156,7 @@ const getAllBookings = async (
               tutorProfile: {
                 bio: {
                   contains: search,
-                  mode: "insensitive",
+                  mode: Prisma.QueryMode.insensitive,
                 },
               },
             },
@@ -165,13 +165,13 @@ const getAllBookings = async (
             student: {
               name: {
                 contains: search,
-                mode: "insensitive",
+                mode: Prisma.QueryMode.insensitive,
               },
             },
           },
         ],
       }
-    : undefined;
+    : {};
 
   const bookings = await prisma.booking.findMany({
     skip: (page - 1) * limit,

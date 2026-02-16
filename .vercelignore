@@ -1,0 +1,9 @@
+src
+prisma/migrations
+.env.development
+_.log
+.DS_Store
+.vscode
+.idea
+_.md
+!README.md

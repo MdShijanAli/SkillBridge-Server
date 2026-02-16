@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { UserService } from "./user.service";
 import { formatResultWithPagination } from "../../utils/formatResult";
 import { UserRole } from "../../middlewares/auth";
+import { User } from "../../../generated/prisma/client";
 
 const updateUser = async (req: Request, res: Response) => {
   const { userId } = req.params;
@@ -11,7 +12,7 @@ const updateUser = async (req: Request, res: Response) => {
     const updatedUser = await UserService.updateUser(
       userId as string,
       userData,
-      requestedUser,
+      requestedUser! as Partial<User>,
     );
     res.status(200).json({
       success: true,
@@ -140,7 +141,7 @@ const deleteUser = async (req: Request, res: Response) => {
   try {
     const deletedUser = await UserService.deleteUser(
       userId as string,
-      requestedUser,
+      requestedUser! as Partial<User>,
     );
     res.status(200).json({
       success: true,
@@ -163,7 +164,7 @@ const makeFeatured = async (req: Request, res: Response) => {
 
   try {
     const updatedTutor = await UserService.makeFeatured(
-      tutorId,
+      tutorId as string,
       Boolean(is_featured),
       requestedUser,
     );

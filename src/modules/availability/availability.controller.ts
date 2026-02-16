@@ -46,7 +46,7 @@ const getAllAvailabilities = async (req: Request, res: Response) => {
 
 const updateAvailabilityService = async (req: Request, res: Response) => {
   const requestedUser = req.user;
-  const availabilityId = parseInt(req.params.id);
+  const availabilityId = parseInt(req.params.id as string);
   try {
     const result = await availabilityService.updateAvailabilityService(
       req.body,
@@ -70,7 +70,7 @@ const updateAvailabilityService = async (req: Request, res: Response) => {
 
 const deleteAvailabilityService = async (req: Request, res: Response) => {
   const requestedUser = req.user;
-  const availabilityId = parseInt(req.params.id);
+  const availabilityId = parseInt(req.params.id as string);
   try {
     const result = await availabilityService.deleteAvailabilityService(
       availabilityId,
@@ -93,7 +93,7 @@ const deleteAvailabilityService = async (req: Request, res: Response) => {
 
 const changeStatusService = async (req: Request, res: Response) => {
   const requestedUser = req.user;
-  const availabilityId = parseInt(req.params.id);
+  const availabilityId = parseInt(req.params.id as string);
   const { isActive } = req.body;
   try {
     const result = await availabilityService.changeStatusService(

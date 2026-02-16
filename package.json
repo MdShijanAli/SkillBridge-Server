@@ -21,12 +21,13 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "build": "prisma generate && tsc",
     "migrate": "npx prisma migrate dev",
     "generate": "npx prisma generate",
     "show:db": "npx prisma studio",
     "generate:auth": "npx @better-auth/cli generate",
     "seed:admin": "tsx src/script/seedAdmin.ts",
+    "build": "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native",
+    "postinstall": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -47,6 +48,7 @@
     "@types/node": "^25.1.0",
     "@types/nodemailer": "^7.0.9",
     "@types/pg": "^8.16.0",
-    "prisma": "^7.3.0"
+    "prisma": "^7.3.0",
+    "tsup": "^8.3.5"
   }
 }

@@ -15,11 +15,11 @@ const transporter = nodemailer.createTransport({
 });
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL!,
+  baseURL: (process.env.BETTER_AUTH_URL || "").trim(),
   database: prismaAdapter(prisma, {
     provider: "postgresql", // or "mysql", "postgresql", ...etc
   }),
-  trustedOrigins: [process.env.APP_URL!],
+  trustedOrigins: [(process.env.APP_URL || "").trim()],
   user: {
     additionalFields: {
       role: {

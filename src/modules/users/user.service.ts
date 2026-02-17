@@ -83,13 +83,21 @@ const getUserDetails = async (userId: string) => {
 
 const changeUserStat = async (
   userId: string,
-  fieldName: "is_active" | "is_banned" | "emailVerified" | "is_featured",
-  value: boolean | string,
+  updateData: Record<string, boolean | string>,
 ) => {
+  const fieldName = Object.keys(updateData)[0];
+
+  if (!fieldName) {
+    throw new Error("No field provided to update");
+  }
+
+  const value = updateData[fieldName];
+
   const booleanValue =
     typeof value === "string"
       ? value === "true" || value === "1"
       : Boolean(value);
+
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: { [fieldName]: booleanValue },

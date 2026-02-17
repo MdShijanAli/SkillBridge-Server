@@ -91,7 +91,15 @@ const getUserDetails = async (req: Request, res: Response) => {
 
 const changeUserStat = async (req: Request, res: Response) => {
   const { userId } = req.params;
-  const { field, value } = req.body;
+  const updateData = req.body;
+  const fieldName = Object.keys(updateData)[0];
+
+  if (!fieldName) {
+    return res.status(400).json({
+      success: false,
+      message: "No field provided to update",
+    });
+  }
 
   const fieldConfig: Record<string, string> = {
     is_active: "User status",
@@ -103,18 +111,17 @@ const changeUserStat = async (req: Request, res: Response) => {
   try {
     const updatedUser = await UserService.changeUserStat(
       userId as string,
-      field as "is_active" | "is_banned" | "emailVerified" | "is_featured",
-      value,
+      updateData,
     );
     res.status(200).json({
       success: true,
-      message: `${fieldConfig[field] || "Field"} updated successfully`,
+      message: `${fieldConfig[fieldName] || "Field"} updated successfully`,
       data: updatedUser,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: `Failed to update ${fieldConfig[field]?.toLowerCase() || "field"}`,
+      message: `Failed to update ${fieldConfig[fieldName]?.toLowerCase() || "field"}`,
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }

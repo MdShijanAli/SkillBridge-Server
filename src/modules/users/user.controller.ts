@@ -89,32 +89,47 @@ const getUserDetails = async (req: Request, res: Response) => {
   }
 };
 
-const changeUserStat = async (req: Request, res: Response) => {
+const changeUserStatus = async (req: Request, res: Response) => {
   const { userId } = req.params;
-  const { field, value } = req.body;
-
-  const fieldConfig: Record<string, string> = {
-    is_active: "User status",
-    is_banned: "User banned status",
-    emailVerified: "User email verification",
-    is_featured: "User featured status",
-  };
-
+  const { is_active } = req.body;
+  console.log("Status:", is_active);
   try {
-    const updatedUser = await UserService.changeUserStat(
+    const updatedUser = await UserService.changeUserStatus(
       userId as string,
-      field as "is_active" | "is_banned" | "emailVerified" | "is_featured",
-      value,
+      is_active,
     );
     res.status(200).json({
       success: true,
-      message: `${fieldConfig[field] || "Field"} updated successfully`,
+      message: "User status updated successfully",
       data: updatedUser,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: `Failed to update ${fieldConfig[field]?.toLowerCase() || "field"}`,
+      message: "Failed to update user status",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+const bannedUser = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const { is_banned } = req.body;
+  console.log("Status:", is_banned);
+  try {
+    const updatedUser = await UserService.bannedUser(
+      userId as string,
+      is_banned,
+    );
+    res.status(200).json({
+      success: true,
+      message: "User banned status updated successfully",
+      data: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update user banned status",
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
@@ -142,10 +157,37 @@ const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
+const makeFeatured = async (req: Request, res: Response) => {
+  const { tutorId } = req.params;
+  const { is_featured } = req.body;
+  const requestedUser = req.user;
+
+  try {
+    const updatedTutor = await UserService.makeFeatured(
+      tutorId as string,
+      Boolean(is_featured),
+      requestedUser,
+    );
+    res.status(200).json({
+      success: true,
+      message: `Tutor ${is_featured ? "marked as" : "removed from"} featured successfully`,
+      data: updatedTutor,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update tutor featured status",
+      error: error.message?.split("\n").pop().trim() || error.message || error,
+    });
+  }
+};
+
 export const UserController = {
   updateUser,
   getAllUsers,
   getUserDetails,
-  changeUserStat,
+  changeUserStatus,
+  bannedUser,
   deleteUser,
+  makeFeatured,
 };

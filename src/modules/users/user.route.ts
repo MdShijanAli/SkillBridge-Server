@@ -17,14 +17,25 @@ router.get(
   UserController.getUserDetails,
 );
 router.patch(
-  "/:userId/stat",
+  "/:userId/status",
   authMiddleware(UserRole.ADMIN),
-  UserController.changeUserStat,
+  UserController.changeUserStatus,
+);
+router.patch(
+  "/:userId/ban",
+  authMiddleware(UserRole.ADMIN),
+  UserController.bannedUser,
 );
 router.delete(
   "/:userId",
   authMiddleware(UserRole.ADMIN, UserRole.TUTOR, UserRole.STUDENT),
   UserController.deleteUser,
+);
+
+router.patch(
+  "/:tutorId/featured",
+  authMiddleware(UserRole.ADMIN),
+  UserController.makeFeatured,
 );
 
 export const UserRoutes = router;

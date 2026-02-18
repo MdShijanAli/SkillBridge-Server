@@ -3,6 +3,7 @@ import { CategoryService } from "./category.service";
 import { formatResultWithPagination } from "../../utils/formatResult";
 
 const createCategory = async (req: Request, res: Response) => {
+  console.log("Received request to create category with data:", req.body);
   try {
     const category = await CategoryService.createCategory(req.body);
     res.status(201).json({

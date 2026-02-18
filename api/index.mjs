@@ -864,17 +864,16 @@ var getUserDetails = async (userId) => {
   });
   return user;
 };
-var changeUserStatus = async (userId, is_active) => {
+var changeUserStat = async (userId, updateData) => {
+  const fieldName = Object.keys(updateData)[0];
+  if (!fieldName) {
+    throw new Error("No field provided to update");
+  }
+  const value = updateData[fieldName];
+  const booleanValue = typeof value === "string" ? value === "true" || value === "1" : Boolean(value);
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: { is_active: is_active ? true : false }
-  });
-  return updatedUser;
-};
-var bannedUser = async (userId, is_banned) => {
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: { is_banned: is_banned ? true : false }
+    data: { [fieldName]: booleanValue }
   });
   return updatedUser;
 };
@@ -889,27 +888,12 @@ var deleteUser = async (userId, requestedUser) => {
   });
   return deletedUser;
 };
-var makeFeatured = async (tutorId, is_featured, requestedUser) => {
-  if (!requestedUser) {
-    throw new Error("Please login to update featured status.");
-  }
-  if (requestedUser.role !== "ADMIN" /* ADMIN */) {
-    throw new Error("Unauthorized to update featured status.");
-  }
-  const updatedProfile = await prisma.user.update({
-    where: { id: tutorId },
-    data: { is_featured }
-  });
-  return updatedProfile;
-};
 var UserService = {
   updateUser,
   getAllUsers,
   getUserDetails,
-  changeUserStatus,
-  bannedUser,
-  deleteUser,
-  makeFeatured
+  changeUserStat,
+  deleteUser
 };
 
 // src/utils/formatResult.ts
@@ -1026,46 +1010,36 @@ var getUserDetails2 = async (req, res) => {
     });
   }
 };
-var changeUserStatus2 = async (req, res) => {
+var changeUserStat2 = async (req, res) => {
   const { userId } = req.params;
-  const { is_active } = req.body;
-  console.log("Status:", is_active);
-  try {
-    const updatedUser = await UserService.changeUserStatus(
-      userId,
-      is_active
-    );
-    res.status(200).json({
-      success: true,
-      message: "User status updated successfully",
-      data: updatedUser
-    });
-  } catch (error) {
-    res.status(500).json({
+  const updateData = req.body;
+  const fieldName = Object.keys(updateData)[0];
+  if (!fieldName) {
+    return res.status(400).json({
       success: false,
-      message: "Failed to update user status",
-      error: error instanceof Error ? error.message : "Unknown error"
+      message: "No field provided to update"
     });
   }
-};
-var bannedUser2 = async (req, res) => {
-  const { userId } = req.params;
-  const { is_banned } = req.body;
-  console.log("Status:", is_banned);
+  const fieldConfig = {
+    is_active: "User status",
+    is_banned: "User banned status",
+    emailVerified: "User email verification",
+    is_featured: "User featured status"
+  };
   try {
-    const updatedUser = await UserService.bannedUser(
+    const updatedUser = await UserService.changeUserStat(
       userId,
-      is_banned
+      updateData
     );
     res.status(200).json({
       success: true,
-      message: "User banned status updated successfully",
+      message: `${fieldConfig[fieldName] || "Field"} updated successfully`,
       data: updatedUser
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to update user banned status",
+      message: `Failed to update ${fieldConfig[fieldName]?.toLowerCase() || "field"}`,
       error: error instanceof Error ? error.message : "Unknown error"
     });
   }
@@ -1091,37 +1065,12 @@ var deleteUser2 = async (req, res) => {
     });
   }
 };
-var makeFeatured2 = async (req, res) => {
-  const { tutorId } = req.params;
-  const { is_featured } = req.body;
-  const requestedUser = req.user;
-  try {
-    const updatedTutor = await UserService.makeFeatured(
-      tutorId,
-      Boolean(is_featured),
-      requestedUser
-    );
-    res.status(200).json({
-      success: true,
-      message: `Tutor ${is_featured ? "marked as" : "removed from"} featured successfully`,
-      data: updatedTutor
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to update tutor featured status",
-      error: error.message?.split("\n").pop().trim() || error.message || error
-    });
-  }
-};
 var UserController = {
   updateUser: updateUser2,
   getAllUsers: getAllUsers2,
   getUserDetails: getUserDetails2,
-  changeUserStatus: changeUserStatus2,
-  bannedUser: bannedUser2,
-  deleteUser: deleteUser2,
-  makeFeatured: makeFeatured2
+  changeUserStat: changeUserStat2,
+  deleteUser: deleteUser2
 };
 
 // src/modules/users/user.route.ts
@@ -1140,22 +1089,12 @@ router.get(
 router.patch(
   "/:userId/status",
   authMiddleware("ADMIN" /* ADMIN */),
-  UserController.changeUserStatus
-);
-router.patch(
-  "/:userId/ban",
-  authMiddleware("ADMIN" /* ADMIN */),
-  UserController.bannedUser
+  UserController.changeUserStat
 );
 router.delete(
   "/:userId",
   authMiddleware("ADMIN" /* ADMIN */, "TUTOR" /* TUTOR */, "STUDENT" /* STUDENT */),
   UserController.deleteUser
-);
-router.patch(
-  "/:tutorId/featured",
-  authMiddleware("ADMIN" /* ADMIN */),
-  UserController.makeFeatured
 );
 var UserRoutes = router;
 
@@ -1337,6 +1276,7 @@ var CategoryService = {
 
 // src/modules/categories/category.controller.ts
 var createCategory2 = async (req, res) => {
+  console.log("Received request to create category with data:", req.body);
   try {
     const category = await CategoryService.createCategory(req.body);
     res.status(201).json({

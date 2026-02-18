@@ -19,23 +19,13 @@ router.get(
 router.patch(
   "/:userId/status",
   authMiddleware(UserRole.ADMIN),
-  UserController.changeUserStatus,
+  UserController.changeUserStat,
 );
-router.patch(
-  "/:userId/ban",
-  authMiddleware(UserRole.ADMIN),
-  UserController.bannedUser,
-);
+
 router.delete(
   "/:userId",
   authMiddleware(UserRole.ADMIN, UserRole.TUTOR, UserRole.STUDENT),
   UserController.deleteUser,
-);
-
-router.patch(
-  "/:tutorId/featured",
-  authMiddleware(UserRole.ADMIN),
-  UserController.makeFeatured,
 );
 
 export const UserRoutes = router;

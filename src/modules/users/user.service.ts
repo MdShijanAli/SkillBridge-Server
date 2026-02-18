@@ -81,18 +81,26 @@ const getUserDetails = async (userId: string) => {
   return user;
 };
 
-const changeUserStatus = async (userId: string, is_active: string) => {
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: { is_active: is_active ? true : false },
-  });
-  return updatedUser;
-};
+const changeUserStat = async (
+  userId: string,
+  updateData: Record<string, boolean | string>,
+) => {
+  const fieldName = Object.keys(updateData)[0];
 
-const bannedUser = async (userId: string, is_banned: string) => {
+  if (!fieldName) {
+    throw new Error("No field provided to update");
+  }
+
+  const value = updateData[fieldName];
+
+  const booleanValue =
+    typeof value === "string"
+      ? value === "true" || value === "1"
+      : Boolean(value);
+
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: { is_banned: is_banned ? true : false },
+    data: { [fieldName]: booleanValue },
   });
   return updatedUser;
 };
@@ -109,32 +117,10 @@ const deleteUser = async (userId: string, requestedUser: Partial<User>) => {
   return deletedUser;
 };
 
-const makeFeatured = async (
-  tutorId: string,
-  is_featured: boolean,
-  requestedUser: Request["user"],
-) => {
-  if (!requestedUser) {
-    throw new Error("Please login to update featured status.");
-  }
-
-  if (requestedUser.role !== UserRole.ADMIN) {
-    throw new Error("Unauthorized to update featured status.");
-  }
-
-  const updatedProfile = await prisma.user.update({
-    where: { id: tutorId },
-    data: { is_featured },
-  });
-  return updatedProfile;
-};
-
 export const UserService = {
   updateUser,
   getAllUsers,
   getUserDetails,
-  changeUserStatus,
-  bannedUser,
+  changeUserStat,
   deleteUser,
-  makeFeatured,
 };

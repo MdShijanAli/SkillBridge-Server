@@ -315,6 +315,11 @@ var transporter = nodemailer.createTransport({
   }
 });
 var auth = betterAuth({
+  cookies: {
+    secure: true,
+    sameSite: "none",
+    httpOnly: true
+  },
   baseURL: (process.env.BETTER_AUTH_URL || "").trim(),
   database: prismaAdapter(prisma, {
     provider: "postgresql"

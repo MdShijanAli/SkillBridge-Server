@@ -20,7 +20,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "migrate": "npx prisma migrate dev",
     "generate": "npx prisma generate",
     "show:db": "npx prisma studio",

@@ -25,7 +25,12 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql", // or "mysql", "postgresql", ...etc
   }),
-  trustedOrigins: [(process.env.APP_URL || "").trim()],
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://skill-bridge-client-by-shijan.netlify.app",
+    (process.env.APP_URL || "").trim(),
+    (process.env.CLIENT_URL || "").trim(),
+  ].filter((origin) => origin !== ""),
   user: {
     additionalFields: {
       role: {

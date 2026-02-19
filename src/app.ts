@@ -23,28 +23,9 @@ dotenv.config();
 
 const app: Application = express();
 
-const allowedOrigins = [
-  process.env.CLIENT_URL?.trim() || "http://localhost:3000",
-  process.env.LIVE_APP_URL?.trim() ||
-    "https://skill-bridge-client-by-shijan.netlify.app",
-];
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-
-      if (
-        allowedOrigins.some(
-          (allowedOrigin) =>
-            allowedOrigin === origin || allowedOrigin === origin + "/",
-        )
-      ) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: (process.env.CLIENT_URL || "http://localhost:3000").trim(),
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],

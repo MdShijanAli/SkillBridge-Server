@@ -6,13 +6,76 @@ import { emailOTP } from "better-auth/plugins";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // Use true for port 465, false for port 587
+  port: 465, // Use port 465 for SSL (Render blocks port 587)
+  secure: true, // true for port 465, false for port 587
   auth: {
     user: process.env.APP_USER,
     pass: process.env.APP_PASSWORD,
   },
+  // Connection pooling and timeout settings
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
+  rateDelta: 1000,
+  rateLimit: 5,
+  connectionTimeout: 60000, // 60 seconds
+  greetingTimeout: 30000, // 30 seconds
+  socketTimeout: 60000, // 60 seconds
+  // TLS options to handle potential certificate issues
+  tls: {
+    // Do not fail on invalid certs (only for development, remove in production if not needed)
+    rejectUnauthorized: true,
+    minVersion: "TLSv1.2",
+  },
+  debug: process.env.NODE_ENV !== "production", // Enable debug logs in development
+  logger: true, // Enable logging
 });
+
+// Verify transporter connection on startup
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error("❌ SMTP connection failed:", error);
+    console.error("Please check your email configuration:");
+    console.error("- APP_USER:", process.env.APP_USER ? "✓ Set" : "✗ Not set");
+    console.error(
+      "- APP_PASSWORD:",
+      process.env.APP_PASSWORD ? "✓ Set" : "✗ Not set",
+    );
+  } else {
+    console.log("✅ SMTP server is ready to send emails");
+  }
+});
+
+// Helper function to send email with retry logic
+async function sendEmailWithRetry(mailOptions: any, maxRetries = 3) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log(
+        `✅ Email sent successfully (attempt ${attempt}/${maxRetries}):`,
+        info.messageId,
+      );
+      return info;
+    } catch (error: any) {
+      lastError = error;
+      console.error(
+        `❌ Attempt ${attempt}/${maxRetries} failed:`,
+        error.message,
+      );
+
+      // Wait before retrying (exponential backoff)
+      if (attempt < maxRetries) {
+        const waitTime = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+        console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+
+  throw lastError;
+}
 
 export const auth = betterAuth({
   cookies: {
@@ -191,7 +254,7 @@ export const auth = betterAuth({
         </html>
       `;
 
-        const info = await transporter.sendMail({
+        const info = await sendEmailWithRetry({
           from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
           to: user.email,
           subject: "✨ Verify your email address - SkillBridge 🎓",
@@ -199,10 +262,16 @@ export const auth = betterAuth({
           html: htmlTemplate,
         });
 
-        console.log("Message sent:", info.messageId);
-      } catch (error) {
-        console.error("Error sending verification email:", error);
-        throw new Error("Failed to send verification email");
+        console.log("✅ Verification email sent:", info.messageId);
+      } catch (error: any) {
+        console.error("❌ Error sending verification email:", error);
+        console.error(
+          "Email details - To:",
+          user.email,
+          "From:",
+          process.env.APP_USER,
+        );
+        throw new Error(`Failed to send verification email: ${error.message}`);
       }
     },
     autoSignInAfterVerification: true,
@@ -311,7 +380,7 @@ export const auth = betterAuth({
           </html>
         `;
 
-          const info = await transporter.sendMail({
+          const info = await sendEmailWithRetry({
             from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
             to: email,
             subject: "🔐 Your Verification Code - SkillBridge 🎓",
@@ -319,10 +388,16 @@ export const auth = betterAuth({
             html: htmlTemplate,
           });
 
-          console.log(`📧 OTP sent to ${email}:`, info.messageId);
-        } catch (error) {
-          console.error("Error sending OTP email:", error);
-          throw new Error("Failed to send verification OTP");
+          console.log(`✅ OTP sent to ${email}:`, info.messageId);
+        } catch (error: any) {
+          console.error("❌ Error sending OTP email:", error);
+          console.error(
+            "Email details - To:",
+            email,
+            "From:",
+            process.env.APP_USER,
+          );
+          throw new Error(`Failed to send verification OTP: ${error.message}`);
         }
       },
       otpLength: 6,

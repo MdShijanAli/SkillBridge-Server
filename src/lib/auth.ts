@@ -3,7 +3,22 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import nodemailer from "nodemailer";
 import { emailOTP } from "better-auth/plugins";
+import { Resend } from "resend";
 
+// Use Resend for production (works on Render), Gmail SMTP for local
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+const USE_RESEND = !!RESEND_API_KEY;
+
+let resend: Resend | null = null;
+
+if (USE_RESEND) {
+  resend = new Resend(RESEND_API_KEY);
+  console.log("✅ Resend configured (works on Render - 100 emails/day free)");
+} else {
+  console.log("⚠️ No Resend API key, using Gmail SMTP (local only)");
+}
+
+// Gmail SMTP for local development
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
@@ -13,6 +28,38 @@ const transporter = nodemailer.createTransport({
     pass: process.env.APP_PASSWORD,
   },
 });
+
+// Unified email sending function
+async function sendEmail(options: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}) {
+  if (USE_RESEND && resend) {
+    // Use Resend for production
+    const result = await resend.emails.send({
+      from: `SkillBridge 🎓 <onboarding@resend.dev>`, // Use verified domain
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+    });
+    console.log("✅ Email sent via Resend:", result.data?.id);
+    return result;
+  } else {
+    // Use Gmail SMTP for local development
+    const info = await transporter.sendMail({
+      from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+    });
+    console.log("✅ Email sent via Gmail SMTP:", info.messageId);
+    return info;
+  }
+}
 
 export const auth = betterAuth({
   cookies: {
@@ -191,15 +238,14 @@ export const auth = betterAuth({
         </html>
       `;
 
-        const info = await transporter.sendMail({
-          from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
+        const info = await sendEmail({
           to: user.email,
           subject: "✨ Verify your email address - SkillBridge 🎓",
           text: `Welcome to SkillBridge 🎓!\n\nPlease verify your email address by clicking the following link:\n\n${url}\n\nIf you didn't create an account, you can safely ignore this email.\n\nThis link will expire in 24 hours.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
           html: htmlTemplate,
         });
 
-        console.log("Message sent:", info.messageId);
+        console.log("✅ Verification email sent successfully");
       } catch (error) {
         console.error("Error sending verification email:", error);
         throw new Error("Failed to send verification email");
@@ -311,15 +357,14 @@ export const auth = betterAuth({
           </html>
           `;
 
-          const info = await transporter.sendMail({
-            from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
+          const info = await sendEmail({
             to: email,
             subject: `🔐 Your Verification Code - SkillBridge 🎓`,
             text: `Your SkillBridge 🎓 verification code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
             html: htmlTemplate,
           });
 
-          console.log("OTP sent:", info.messageId);
+          console.log("✅ OTP email sent successfully");
         } catch (error) {
           console.error("Error sending OTP:", error);
           throw new Error("Failed to send verification OTP");

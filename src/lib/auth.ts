@@ -3,48 +3,97 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import nodemailer from "nodemailer";
 import { emailOTP } from "better-auth/plugins";
+import { BrevoClient } from "@getbrevo/brevo";
 
+// Configure Brevo (works on Render and other serverless platforms)
+const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
+const USE_BREVO = !!BREVO_API_KEY;
+
+let brevoClient: BrevoClient | null = null;
+
+if (USE_BREVO) {
+  brevoClient = new BrevoClient({
+    apiKey: BREVO_API_KEY,
+  });
+  console.log("✅ Brevo configured for email delivery (300 emails/day free)");
+} else {
+  console.log("⚠️ No Brevo API key, will attempt SMTP (may fail on Render)");
+}
+
+// Nodemailer SMTP as fallback (for local development)
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465, // Use port 465 for SSL (Render blocks port 587)
-  secure: true, // true for port 465, false for port 587
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.APP_USER,
     pass: process.env.APP_PASSWORD,
   },
-  // Connection pooling and timeout settings
   pool: true,
   maxConnections: 5,
   maxMessages: 100,
   rateDelta: 1000,
   rateLimit: 5,
-  connectionTimeout: 15000, // 15 seconds (reduced from 60)
-  greetingTimeout: 10000, // 10 seconds (reduced from 30)
-  socketTimeout: 15000, // 15 seconds (reduced from 60)
-  // TLS options to handle potential certificate issues
+  connectionTimeout: 15000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
   tls: {
-    // Do not fail on invalid certs (only for development, remove in production if not needed)
     rejectUnauthorized: true,
     minVersion: "TLSv1.2",
   },
-  debug: process.env.NODE_ENV !== "production", // Enable debug logs in development
-  logger: true, // Enable logging
+  debug: process.env.NODE_ENV !== "production",
+  logger: true,
 });
 
-// Verify transporter connection on startup
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error("❌ SMTP connection failed:", error);
-    console.error("Please check your email configuration:");
-    console.error("- APP_USER:", process.env.APP_USER ? "✓ Set" : "✗ Not set");
-    console.error(
-      "- APP_PASSWORD:",
-      process.env.APP_PASSWORD ? "✓ Set" : "✗ Not set",
-    );
+// Only verify SMTP if not using Brevo
+if (!USE_BREVO) {
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.error("❌ SMTP connection failed:", error);
+      console.error("Please check your email configuration:");
+      console.error(
+        "- APP_USER:",
+        process.env.APP_USER ? "✓ Set" : "✗ Not set",
+      );
+      console.error(
+        "- APP_PASSWORD:",
+        process.env.APP_PASSWORD ? "✓ Set" : "✗ Not set",
+      );
+    } else {
+      console.log("✅ SMTP server is ready to send emails");
+    }
+  });
+}
+
+// Unified email sending function
+async function sendEmail(options: {
+  to: string;
+  from: string;
+  subject: string;
+  text: string;
+  html: string;
+}) {
+  if (USE_BREVO && brevoClient) {
+    // Use Brevo (works on Render)
+    const result = await brevoClient.transactionalEmails.sendTransacEmail({
+      subject: options.subject,
+      sender: {
+        email: process.env.APP_USER || "",
+        name: "SkillBridge 🎓",
+      },
+      to: [{ email: options.to }],
+      textContent: options.text,
+      htmlContent: options.html,
+    });
+    console.log("✅ Email sent via Brevo:", result.messageId);
+    return result;
   } else {
-    console.log("✅ SMTP server is ready to send emails");
+    // Use SMTP (local development)
+    const info = await transporter.sendMail(options);
+    console.log("✅ Email sent via SMTP:", info.messageId);
+    return info;
   }
-});
+}
 
 // Helper function to send email with retry logic
 async function sendEmailWithRetry(mailOptions: any, maxRetries = 2) {
@@ -52,12 +101,11 @@ async function sendEmailWithRetry(mailOptions: any, maxRetries = 2) {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const info = await transporter.sendMail(mailOptions);
+      const result = await sendEmail(mailOptions);
       console.log(
-        `✅ Email sent successfully (attempt ${attempt}/${maxRetries}):`,
-        info.messageId,
+        `✅ Email delivered successfully (attempt ${attempt}/${maxRetries})`,
       );
-      return info;
+      return result;
     } catch (error: any) {
       lastError = error;
       console.error(
@@ -65,9 +113,9 @@ async function sendEmailWithRetry(mailOptions: any, maxRetries = 2) {
         error.message,
       );
 
-      // Wait before retrying (shorter backoff)
+      // Wait before retrying
       if (attempt < maxRetries) {
-        const waitTime = 1500; // Fixed 1.5s wait (faster than exponential)
+        const waitTime = 1500;
         console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);
         await new Promise((resolve) => setTimeout(resolve, waitTime));
       }

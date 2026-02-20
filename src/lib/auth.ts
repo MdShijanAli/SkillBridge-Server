@@ -256,28 +256,35 @@ export const auth = betterAuth({
         </html>
       `;
 
-        const info = await sendEmailWithRetry({
-          from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
-          to: user.email,
-          subject: "✨ Verify your email address - SkillBridge 🎓",
-          text: `Welcome to SkillBridge 🎓!\n\nPlease verify your email address by clicking the following link:\n\n${url}\n\nIf you didn't create an account, you can safely ignore this email.\n\nThis link will expire in 24 hours.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
-          html: htmlTemplate,
+        // Send email in background without blocking the response
+        setImmediate(async () => {
+          try {
+            const info = await sendEmailWithRetry({
+              from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
+              to: user.email,
+              subject: "✨ Verify your email address - SkillBridge 🎓",
+              text: `Welcome to SkillBridge 🎓!\n\nPlease verify your email address by clicking the following link:\n\n${url}\n\nIf you didn't create an account, you can safely ignore this email.\n\nThis link will expire in 24 hours.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
+              html: htmlTemplate,
+            });
+            console.log("✅ Verification email sent:", info.messageId);
+          } catch (error: any) {
+            console.error("❌ Error sending verification email:", error);
+            console.error(
+              "Email details - To:",
+              user.email,
+              "From:",
+              process.env.APP_USER,
+            );
+            console.error(
+              "⚠️ WARNING: User registered but verification email failed to send",
+            );
+          }
         });
 
-        console.log("✅ Verification email sent:", info.messageId);
+        console.log("📧 Verification email queued for background sending");
       } catch (error: any) {
-        // Log the error but DON'T throw it - registration should succeed
-        console.error("❌ Error sending verification email:", error);
-        console.error(
-          "Email details - To:",
-          user.email,
-          "From:",
-          process.env.APP_USER,
-        );
-        console.error(
-          "⚠️ WARNING: User registered but verification email failed to send",
-        );
-        // DON'T throw - let registration complete successfully
+        // Catch any immediate errors (like template issues)
+        console.error("❌ Error preparing verification email:", error);
       }
     },
     autoSignInAfterVerification: true,
@@ -386,26 +393,35 @@ export const auth = betterAuth({
           </html>
         `;
 
-          const info = await sendEmailWithRetry({
-            from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
-            to: email,
-            subject: "🔐 Your Verification Code - SkillBridge 🎓",
-            text: `Your SkillBridge 🎓 verification code is: ${otp}\n\nThis code will expire in 5 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
-            html: htmlTemplate,
+          // Send email in background without blocking the response
+          setImmediate(async () => {
+            try {
+              const info = await sendEmailWithRetry({
+                from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
+                to: email,
+                subject: "🔐 Your Verification Code - SkillBridge 🎓",
+                text: `Your SkillBridge 🎓 verification code is: ${otp}\n\nThis code will expire in 5 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
+                html: htmlTemplate,
+              });
+              console.log(`✅ OTP sent to ${email}:`, info.messageId);
+            } catch (error: any) {
+              console.error("❌ Error sending OTP email:", error);
+              console.error(
+                "Email details - To:",
+                email,
+                "From:",
+                process.env.APP_USER,
+              );
+              console.error(
+                "⚠️ WARNING: OTP generated but email failed to send",
+              );
+            }
           });
 
-          console.log(`✅ OTP sent to ${email}:`, info.messageId);
+          console.log(`📧 OTP email queued for background sending to ${email}`);
         } catch (error: any) {
-          // Log error but don't throw - let the OTP operation complete
-          console.error("❌ Error sending OTP email:", error);
-          console.error(
-            "Email details - To:",
-            email,
-            "From:",
-            process.env.APP_USER,
-          );
-          console.error("⚠️ WARNING: OTP generated but email failed to send");
-          // DON'T throw - Better Auth will handle this gracefully
+          // Catch any immediate errors (like template issues)
+          console.error("❌ Error preparing OTP email:", error);
         }
       },
       otpLength: 6,

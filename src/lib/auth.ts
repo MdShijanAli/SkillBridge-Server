@@ -3,150 +3,16 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import nodemailer from "nodemailer";
 import { emailOTP } from "better-auth/plugins";
-import { BrevoClient } from "@getbrevo/brevo";
 
-// Configure Brevo (works on Render and other serverless platforms)
-const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
-const USE_BREVO = !!BREVO_API_KEY;
-
-let brevoClient: BrevoClient | null = null;
-
-if (USE_BREVO) {
-  brevoClient = new BrevoClient({
-    apiKey: BREVO_API_KEY,
-  });
-  console.log("✅ Brevo configured for email delivery (300 emails/day free)");
-} else {
-  console.log("⚠️ No Brevo API key, will attempt SMTP (may fail on Render)");
-}
-
-// Nodemailer SMTP as fallback (for local development)
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false, // Use true for port 465, false for port 587
   auth: {
     user: process.env.APP_USER,
     pass: process.env.APP_PASSWORD,
   },
-  pool: true,
-  maxConnections: 5,
-  maxMessages: 100,
-  rateDelta: 1000,
-  rateLimit: 5,
-  connectionTimeout: 15000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-  tls: {
-    rejectUnauthorized: true,
-    minVersion: "TLSv1.2",
-  },
-  debug: process.env.NODE_ENV !== "production",
-  logger: true,
 });
-
-// Only verify SMTP if not using Brevo
-if (!USE_BREVO) {
-  transporter.verify(function (error, success) {
-    if (error) {
-      console.error("❌ SMTP connection failed:", error);
-      console.error("Please check your email configuration:");
-      console.error(
-        "- APP_USER:",
-        process.env.APP_USER ? "✓ Set" : "✗ Not set",
-      );
-      console.error(
-        "- APP_PASSWORD:",
-        process.env.APP_PASSWORD ? "✓ Set" : "✗ Not set",
-      );
-    } else {
-      console.log("✅ SMTP server is ready to send emails");
-    }
-  });
-}
-
-// Unified email sending function
-async function sendEmail(options: {
-  to: string;
-  from: string;
-  subject: string;
-  text: string;
-  html: string;
-}) {
-  if (USE_BREVO && brevoClient) {
-    // Use Brevo (works on Render)
-    const result = await brevoClient.transactionalEmails.sendTransacEmail({
-      subject: options.subject,
-      sender: {
-        email: process.env.APP_USER || "",
-        name: "SkillBridge 🎓",
-      },
-      to: [{ email: options.to }],
-      textContent: options.text,
-      htmlContent: options.html,
-    });
-    console.log("✅ Email sent via Brevo:", result.messageId);
-    return result;
-  } else {
-    // Use SMTP (local development)
-    const info = await transporter.sendMail(options);
-    console.log("✅ Email sent via SMTP:", info.messageId);
-    return info;
-  }
-}
-
-// Helper function to send email with retry logic
-async function sendEmailWithRetry(mailOptions: any, maxRetries = 2) {
-  let lastError;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const result = await sendEmail(mailOptions);
-      console.log(
-        `✅ Email delivered successfully (attempt ${attempt}/${maxRetries})`,
-      );
-      return result;
-    } catch (error: any) {
-      lastError = error;
-      console.error(
-        `❌ Attempt ${attempt}/${maxRetries} failed:`,
-        error.message,
-      );
-
-      // Wait before retrying
-      if (attempt < maxRetries) {
-        const waitTime = 1500;
-        console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-      }
-    }
-  }
-
-  throw lastError;
-}
-
-// Helper to send email with timeout for serverless environments
-async function sendEmailWithTimeout(mailOptions: any, timeoutMs = 8000) {
-  const emailPromise = sendEmailWithRetry(mailOptions);
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("Email send timeout")), timeoutMs),
-  );
-
-  try {
-    return await Promise.race([emailPromise, timeoutPromise]);
-  } catch (error: any) {
-    if (error.message === "Email send timeout") {
-      console.log(
-        "⏱️ Email sending timed out, but will continue in background",
-      );
-      // Let the email attempt continue in background
-      emailPromise.catch((err) =>
-        console.error("Background email failed:", err),
-      );
-    }
-    throw error;
-  }
-}
 
 export const auth = betterAuth({
   cookies: {
@@ -220,8 +86,6 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url, token }, request) => {
-      // DON'T throw errors - let registration complete even if email fails
-      // User can request a new verification email later
       try {
         const verificationUrl = `${process.env.APP_URL}/verify-email?token=${token}`;
 
@@ -327,35 +191,18 @@ export const auth = betterAuth({
         </html>
       `;
 
-        // Try to send email with timeout (works in serverless)
-        try {
-          await sendEmailWithTimeout(
-            {
-              from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
-              to: user.email,
-              subject: "✨ Verify your email address - SkillBridge 🎓",
-              text: `Welcome to SkillBridge 🎓!\n\nPlease verify your email address by clicking the following link:\n\n${url}\n\nIf you didn't create an account, you can safely ignore this email.\n\nThis link will expire in 24 hours.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
-              html: htmlTemplate,
-            },
-            8000,
-          ); // 8 second timeout
-          console.log("✅ Verification email sent successfully");
-        } catch (error: any) {
-          // Log but don't throw - registration should still succeed
-          console.error("❌ Error sending verification email:", error.message);
-          console.error(
-            "Email details - To:",
-            user.email,
-            "From:",
-            process.env.APP_USER,
-          );
-          console.error(
-            "⚠️ WARNING: User registered but verification email may have failed",
-          );
-        }
-      } catch (error: any) {
-        // Catch any template preparation errors
-        console.error("❌ Error preparing verification email:", error);
+        const info = await transporter.sendMail({
+          from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
+          to: user.email,
+          subject: "✨ Verify your email address - SkillBridge 🎓",
+          text: `Welcome to SkillBridge 🎓!\n\nPlease verify your email address by clicking the following link:\n\n${url}\n\nIf you didn't create an account, you can safely ignore this email.\n\nThis link will expire in 24 hours.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
+          html: htmlTemplate,
+        });
+
+        console.log("Message sent:", info.messageId);
+      } catch (error) {
+        console.error("Error sending verification email:", error);
+        throw new Error("Failed to send verification email");
       }
     },
     autoSignInAfterVerification: true,
@@ -411,10 +258,10 @@ export const auth = betterAuth({
                         </div>
                         
                         <p style="margin: 25px 0 0; color: #718096; font-size: 14px; line-height: 1.6;">
-                          This code will expire in <strong>5 minutes</strong>.
+                          This code will expire in <strong>10 minutes</strong>.
                         </p>
                         <p style="margin: 10px 0 0; color: #718096; font-size: 14px; line-height: 1.6;">
-                          You have <strong>3 attempts</strong> to enter the correct code.
+                          Please enter this code to complete your ${type}.
                         </p>
                       </td>
                     </tr>
@@ -462,42 +309,22 @@ export const auth = betterAuth({
             </table>
           </body>
           </html>
-        `;
+          `;
 
-          // Try to send email with timeout (works in serverless)
-          try {
-            await sendEmailWithTimeout(
-              {
-                from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
-                to: email,
-                subject: "🔐 Your Verification Code - SkillBridge 🎓",
-                text: `Your SkillBridge 🎓 verification code is: ${otp}\n\nThis code will expire in 5 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
-                html: htmlTemplate,
-              },
-              8000,
-            ); // 8 second timeout
-            console.log(`✅ OTP email sent to ${email}`);
-          } catch (error: any) {
-            // Log but don't throw - OTP generation should still succeed
-            console.error("❌ Error sending OTP email:", error.message);
-            console.error(
-              "Email details - To:",
-              email,
-              "From:",
-              process.env.APP_USER,
-            );
-            console.error(
-              "⚠️ WARNING: OTP generated but email may have failed",
-            );
-          }
-        } catch (error: any) {
-          // Catch any template preparation errors
-          console.error("❌ Error preparing OTP email:", error);
+          const info = await transporter.sendMail({
+            from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
+            to: email,
+            subject: `🔐 Your Verification Code - SkillBridge 🎓`,
+            text: `Your SkillBridge 🎓 verification code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
+            html: htmlTemplate,
+          });
+
+          console.log("OTP sent:", info.messageId);
+        } catch (error) {
+          console.error("Error sending OTP:", error);
+          throw new Error("Failed to send verification OTP");
         }
       },
-      otpLength: 6,
-      expiresIn: 300,
-      allowedAttempts: 3,
     }),
   ],
 });

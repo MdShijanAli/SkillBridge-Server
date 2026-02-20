@@ -77,6 +77,29 @@ async function sendEmailWithRetry(mailOptions: any, maxRetries = 2) {
   throw lastError;
 }
 
+// Helper to send email with timeout for serverless environments
+async function sendEmailWithTimeout(mailOptions: any, timeoutMs = 8000) {
+  const emailPromise = sendEmailWithRetry(mailOptions);
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Email send timeout")), timeoutMs),
+  );
+
+  try {
+    return await Promise.race([emailPromise, timeoutPromise]);
+  } catch (error: any) {
+    if (error.message === "Email send timeout") {
+      console.log(
+        "⏱️ Email sending timed out, but will continue in background",
+      );
+      // Let the email attempt continue in background
+      emailPromise.catch((err) =>
+        console.error("Background email failed:", err),
+      );
+    }
+    throw error;
+  }
+}
+
 export const auth = betterAuth({
   cookies: {
     secure: true,
@@ -256,34 +279,34 @@ export const auth = betterAuth({
         </html>
       `;
 
-        // Send email in background without blocking the response
-        setImmediate(async () => {
-          try {
-            const info = await sendEmailWithRetry({
+        // Try to send email with timeout (works in serverless)
+        try {
+          await sendEmailWithTimeout(
+            {
               from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
               to: user.email,
               subject: "✨ Verify your email address - SkillBridge 🎓",
               text: `Welcome to SkillBridge 🎓!\n\nPlease verify your email address by clicking the following link:\n\n${url}\n\nIf you didn't create an account, you can safely ignore this email.\n\nThis link will expire in 24 hours.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
               html: htmlTemplate,
-            });
-            console.log("✅ Verification email sent:", info.messageId);
-          } catch (error: any) {
-            console.error("❌ Error sending verification email:", error);
-            console.error(
-              "Email details - To:",
-              user.email,
-              "From:",
-              process.env.APP_USER,
-            );
-            console.error(
-              "⚠️ WARNING: User registered but verification email failed to send",
-            );
-          }
-        });
-
-        console.log("📧 Verification email queued for background sending");
+            },
+            8000,
+          ); // 8 second timeout
+          console.log("✅ Verification email sent successfully");
+        } catch (error: any) {
+          // Log but don't throw - registration should still succeed
+          console.error("❌ Error sending verification email:", error.message);
+          console.error(
+            "Email details - To:",
+            user.email,
+            "From:",
+            process.env.APP_USER,
+          );
+          console.error(
+            "⚠️ WARNING: User registered but verification email may have failed",
+          );
+        }
       } catch (error: any) {
-        // Catch any immediate errors (like template issues)
+        // Catch any template preparation errors
         console.error("❌ Error preparing verification email:", error);
       }
     },
@@ -393,34 +416,34 @@ export const auth = betterAuth({
           </html>
         `;
 
-          // Send email in background without blocking the response
-          setImmediate(async () => {
-            try {
-              const info = await sendEmailWithRetry({
+          // Try to send email with timeout (works in serverless)
+          try {
+            await sendEmailWithTimeout(
+              {
                 from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
                 to: email,
                 subject: "🔐 Your Verification Code - SkillBridge 🎓",
                 text: `Your SkillBridge 🎓 verification code is: ${otp}\n\nThis code will expire in 5 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
                 html: htmlTemplate,
-              });
-              console.log(`✅ OTP sent to ${email}:`, info.messageId);
-            } catch (error: any) {
-              console.error("❌ Error sending OTP email:", error);
-              console.error(
-                "Email details - To:",
-                email,
-                "From:",
-                process.env.APP_USER,
-              );
-              console.error(
-                "⚠️ WARNING: OTP generated but email failed to send",
-              );
-            }
-          });
-
-          console.log(`📧 OTP email queued for background sending to ${email}`);
+              },
+              8000,
+            ); // 8 second timeout
+            console.log(`✅ OTP email sent to ${email}`);
+          } catch (error: any) {
+            // Log but don't throw - OTP generation should still succeed
+            console.error("❌ Error sending OTP email:", error.message);
+            console.error(
+              "Email details - To:",
+              email,
+              "From:",
+              process.env.APP_USER,
+            );
+            console.error(
+              "⚠️ WARNING: OTP generated but email may have failed",
+            );
+          }
         } catch (error: any) {
-          // Catch any immediate errors (like template issues)
+          // Catch any template preparation errors
           console.error("❌ Error preparing OTP email:", error);
         }
       },

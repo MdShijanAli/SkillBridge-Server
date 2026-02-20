@@ -67,7 +67,11 @@ const GetStudentDashboardStats = async (requestedUser: Request["user"]) => {
     }),
 
     prisma.booking.findMany({
-      where: { studentId: requestedUser.id, status: BookingStatus.CONFIRMED },
+      where: {
+        studentId: requestedUser.id,
+        status: BookingStatus.CONFIRMED,
+        review: null,
+      },
       take: 2,
       orderBy: { createdAt: "desc" },
       include: {

@@ -47,6 +47,17 @@ export function betterAuthErrorHandler(
     body: req.body,
   });
 
+  // Handle email sending errors gracefully
+  if (
+    error.message &&
+    (error.message.includes("Failed to send verification email") ||
+      error.message.includes("Failed to send verification OTP"))
+  ) {
+    console.error("⚠️ Email sending failed, but request will succeed");
+    // Don't return error - let the request succeed
+    return;
+  }
+
   if (error.message && error.message.includes("Invalid value for")) {
     const match = error.message.match(/Invalid value for (\w+)/);
     const field = match ? match[1] : "unknown field";

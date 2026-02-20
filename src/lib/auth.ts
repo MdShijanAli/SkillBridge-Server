@@ -18,9 +18,9 @@ const transporter = nodemailer.createTransport({
   maxMessages: 100,
   rateDelta: 1000,
   rateLimit: 5,
-  connectionTimeout: 60000, // 60 seconds
-  greetingTimeout: 30000, // 30 seconds
-  socketTimeout: 60000, // 60 seconds
+  connectionTimeout: 15000, // 15 seconds (reduced from 60)
+  greetingTimeout: 10000, // 10 seconds (reduced from 30)
+  socketTimeout: 15000, // 15 seconds (reduced from 60)
   // TLS options to handle potential certificate issues
   tls: {
     // Do not fail on invalid certs (only for development, remove in production if not needed)
@@ -47,7 +47,7 @@ transporter.verify(function (error, success) {
 });
 
 // Helper function to send email with retry logic
-async function sendEmailWithRetry(mailOptions: any, maxRetries = 3) {
+async function sendEmailWithRetry(mailOptions: any, maxRetries = 2) {
   let lastError;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -65,9 +65,9 @@ async function sendEmailWithRetry(mailOptions: any, maxRetries = 3) {
         error.message,
       );
 
-      // Wait before retrying (exponential backoff)
+      // Wait before retrying (shorter backoff)
       if (attempt < maxRetries) {
-        const waitTime = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+        const waitTime = 1500; // Fixed 1.5s wait (faster than exponential)
         console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);
         await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
@@ -149,6 +149,8 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url, token }, request) => {
+      // DON'T throw errors - let registration complete even if email fails
+      // User can request a new verification email later
       try {
         const verificationUrl = `${process.env.APP_URL}/verify-email?token=${token}`;
 
@@ -264,6 +266,7 @@ export const auth = betterAuth({
 
         console.log("✅ Verification email sent:", info.messageId);
       } catch (error: any) {
+        // Log the error but DON'T throw it - registration should succeed
         console.error("❌ Error sending verification email:", error);
         console.error(
           "Email details - To:",
@@ -271,7 +274,10 @@ export const auth = betterAuth({
           "From:",
           process.env.APP_USER,
         );
-        throw new Error(`Failed to send verification email: ${error.message}`);
+        console.error(
+          "⚠️ WARNING: User registered but verification email failed to send",
+        );
+        // DON'T throw - let registration complete successfully
       }
     },
     autoSignInAfterVerification: true,
@@ -390,6 +396,7 @@ export const auth = betterAuth({
 
           console.log(`✅ OTP sent to ${email}:`, info.messageId);
         } catch (error: any) {
+          // Log error but don't throw - let the OTP operation complete
           console.error("❌ Error sending OTP email:", error);
           console.error(
             "Email details - To:",
@@ -397,7 +404,8 @@ export const auth = betterAuth({
             "From:",
             process.env.APP_USER,
           );
-          throw new Error(`Failed to send verification OTP: ${error.message}`);
+          console.error("⚠️ WARNING: OTP generated but email failed to send");
+          // DON'T throw - Better Auth will handle this gracefully
         }
       },
       otpLength: 6,

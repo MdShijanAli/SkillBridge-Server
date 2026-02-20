@@ -78,6 +78,7 @@ const GetStudentDashboardStats = async (requestedUser: Request["user"]) => {
             name: true,
           },
         },
+        review: true,
       },
     }),
   ]);

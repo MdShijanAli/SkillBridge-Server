@@ -62,6 +62,9 @@ const getAllUsers = async ({
       reviews: true,
       receivedReviews: true,
     },
+    orderBy: {
+      updatedAt: "desc",
+    },
   });
   const total = await prisma.user.count({
     where: whereClause,

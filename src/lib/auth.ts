@@ -1,18 +1,52 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
-import nodemailer from "nodemailer";
 import { emailOTP } from "better-auth/plugins";
+import axios from "axios";
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.APP_USER,
-    pass: process.env.APP_PASSWORD,
-  },
-});
+// ------------------------
+// Unified Email Function (Brevo API)
+// ------------------------
+
+async function sendEmail(options: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}) {
+  try {
+    const response = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          name: "SkillBridge 🎓",
+          email: process.env.APP_USER,
+        },
+        to: [{ email: options.to }],
+        subject: options.subject,
+        htmlContent: options.html,
+        textContent: options.text,
+      },
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+        timeout: 15000,
+      },
+    );
+
+    console.log("✅ Email sent via Brevo API:", response.data?.messageId);
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Brevo Email API Error:", error?.response?.data || error);
+    throw new Error("Failed to send email");
+  }
+}
+
+// ------------------------
+// BetterAuth Config
+// ------------------------
 
 export const auth = betterAuth({
   cookies: {
@@ -22,74 +56,56 @@ export const auth = betterAuth({
   },
 
   baseURL: (process.env.BETTER_AUTH_URL || "").trim(),
+
   database: prismaAdapter(prisma, {
-    provider: "postgresql", // or "mysql", "postgresql", ...etc
+    provider: "postgresql",
   }),
+
   trustedOrigins: [
     "http://localhost:3000",
     "https://skill-bridge-client-by-shijan.netlify.app",
     (process.env.APP_URL || "").trim(),
     (process.env.CLIENT_URL || "").trim(),
-  ].filter((origin) => origin !== ""),
+  ].filter(Boolean),
+
   user: {
     additionalFields: {
-      role: {
-        type: "string",
-        defaultValue: "STUDENT",
-      },
-      firstName: {
-        type: "string",
-        required: false,
-        fieldName: "first_name",
-      },
-      lastName: {
-        type: "string",
-        required: false,
-        fieldName: "last_name",
-      },
-      phone: {
-        type: "string",
-        required: false,
-      },
+      role: { type: "string", defaultValue: "STUDENT" },
+      firstName: { type: "string", required: false, fieldName: "first_name" },
+      lastName: { type: "string", required: false, fieldName: "last_name" },
+      phone: { type: "string", required: false },
       profileImage: {
         type: "string",
         required: false,
         fieldName: "profile_image",
       },
-      isActive: {
-        type: "boolean",
-        defaultValue: true,
-        fieldName: "is_active",
-      },
+      isActive: { type: "boolean", defaultValue: true, fieldName: "is_active" },
       isBanned: {
         type: "boolean",
         defaultValue: false,
         fieldName: "is_banned",
       },
-      bio: {
-        type: "string",
-        required: false,
-        fieldName: "bio",
-      },
-      location: {
-        type: "string",
-        required: false,
-        fieldName: "location",
-      },
+      bio: { type: "string", required: false },
+      location: { type: "string", required: false },
     },
   },
+
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
     requireEmailVerification: true,
   },
+
+  // ------------------------
+  // Email Verification
+  // ------------------------
+
   emailVerification: {
     sendOnSignUp: true,
-    sendVerificationEmail: async ({ user, url, token }, request) => {
-      try {
-        const verificationUrl = `${process.env.APP_URL}/verify-email?token=${token}`;
+    sendVerificationEmail: async ({ user, url, token }) => {
+      const verificationUrl = `${process.env.APP_URL}/verify-email?token=${token}`;
 
-        const htmlTemplate = `
+      const htmlTemplate = `
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -191,22 +207,23 @@ export const auth = betterAuth({
         </html>
       `;
 
-        const info = await transporter.sendMail({
-          from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
-          to: user.email,
-          subject: "✨ Verify your email address - SkillBridge 🎓",
-          text: `Welcome to SkillBridge 🎓!\n\nPlease verify your email address by clicking the following link:\n\n${url}\n\nIf you didn't create an account, you can safely ignore this email.\n\nThis link will expire in 24 hours.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
-          html: htmlTemplate,
-        });
+      await sendEmail({
+        to: user.email,
+        subject: "✨ Verify your email address - SkillBridge 🎓",
+        text: `Welcome to SkillBridge 🎓!\n\nPlease verify your email address by clicking the following link:\n\n${url}\n\nIf you didn't create an account, you can safely ignore this email.\n\nThis link will expire in 24 hours.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
+        html: htmlTemplate,
+      });
 
-        console.log("Message sent:", info.messageId);
-      } catch (error) {
-        console.error("Error sending verification email:", error);
-        throw new Error("Failed to send verification email");
-      }
+      console.log("✅ Verification email sent");
     },
+
     autoSignInAfterVerification: true,
   },
+
+  // ------------------------
+  // Google OAuth
+  // ------------------------
+
   socialProviders: {
     google: {
       prompt: "select_account",
@@ -214,11 +231,15 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
   },
+
+  // ------------------------
+  // OTP Plugin
+  // ------------------------
+
   plugins: [
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
-        try {
-          const htmlTemplate = `
+        const htmlTemplate = `
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -311,19 +332,14 @@ export const auth = betterAuth({
           </html>
           `;
 
-          const info = await transporter.sendMail({
-            from: `"SkillBridge 🎓" <${process.env.APP_USER}>`,
-            to: email,
-            subject: `🔐 Your Verification Code - SkillBridge 🎓`,
-            text: `Your SkillBridge 🎓 verification code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
-            html: htmlTemplate,
-          });
+        await sendEmail({
+          to: email,
+          subject: `🔐 Your Verification Code - SkillBridge 🎓`,
+          text: `Your SkillBridge 🎓 verification code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© ${new Date().getFullYear()} SkillBridge 🎓. All rights reserved.`,
+          html: htmlTemplate,
+        });
 
-          console.log("OTP sent:", info.messageId);
-        } catch (error) {
-          console.error("Error sending OTP:", error);
-          throw new Error("Failed to send verification OTP");
-        }
+        console.log("✅ OTP email sent");
       },
     }),
   ],
